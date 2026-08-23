@@ -1,0 +1,25 @@
+{
+  "name": "ai-revenue-recovery",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean"
+  },
+  "packageManager": "yarn@4.12.0",
+  "devDependencies": {
+    "turbo": "^2.10.11",
+    "typescript": "6.0.3"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}
