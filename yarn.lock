@@ -1423,6 +1423,7 @@ __metadata:
     drizzle-kit: "npm:^0.31.10"
     drizzle-orm: "npm:^0.45.2"
     postgres: "npm:^3.4.9"
+    typescript: "npm:6.0.3"
   languageName: unknown
   linkType: soft
 
@@ -1435,6 +1436,8 @@ __metadata:
 "@recovery/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@recovery/types@workspace:packages/types"
+  dependencies:
+    typescript: "npm:6.0.3"
   languageName: unknown
   linkType: soft
 
@@ -1447,6 +1450,9 @@ __metadata:
 "@recovery/validation@workspace:packages/validation":
   version: 0.0.0-use.local
   resolution: "@recovery/validation@workspace:packages/validation"
+  dependencies:
+    typescript: "npm:6.0.3"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
