@@ -1420,6 +1420,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@recovery/db@workspace:packages/db"
   dependencies:
+    "@types/node": "npm:^26.2.0"
+    dotenv: "npm:^16.4.5"
     drizzle-kit: "npm:^0.31.10"
     drizzle-orm: "npm:^0.45.2"
     postgres: "npm:^3.4.9"
@@ -2797,6 +2799,13 @@ __metadata:
   dependencies:
     esutils: "npm:^2.0.2"
   checksum: 10c0/b6416aaff1f380bf56c3b552f31fdf7a69b45689368deca72d28636f41c16bb28ec3ebc40ace97db4c1afc0ceeb8120e8492fe0046841c94c2933b2e30a7d5ac
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^16.4.5":
+  version: 16.6.1
+  resolution: "dotenv@npm:16.6.1"
+  checksum: 10c0/15ce56608326ea0d1d9414a5c8ee6dcf0fffc79d2c16422b4ac2268e7e2d76ff5a572d37ffe747c377de12005f14b3cc22361e79fc7f1061cce81f77d2c973dc
   languageName: node
   linkType: hard
 
