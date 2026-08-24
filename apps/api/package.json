@@ -12,6 +12,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@recovery/case-lifecycle": "workspace:*",
     "@recovery/config": "workspace:*",
     "@recovery/queue": "workspace:*",
     "cors": "^2.8.6",

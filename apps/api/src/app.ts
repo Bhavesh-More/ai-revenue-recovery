@@ -9,6 +9,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { healthRouter } from "./routes/health.js";
 import { queueTestRouter } from "./routes/queue-test.js";
+import { casesRouter } from "./routes/cases.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -56,6 +57,7 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(healthRouter);
   app.use(`/api/${config.version}`, healthRouter);
   app.use(`/api/${config.version}`, queueTestRouter);
+  app.use(`/api/${config.version}`, casesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
