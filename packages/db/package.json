@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "@recovery/config": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

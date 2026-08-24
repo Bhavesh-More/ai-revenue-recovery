@@ -1,25 +1,33 @@
 {
   "name": "@recovery/api",
   "private": true,
+  "main": "./dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "server": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo"
   },
-  "packageManager": "yarn@4.12.0",
   "dependencies": {
+    "@recovery/config": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "helmet": "^8.3.0"
+    "helmet": "^8.3.0",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
+    "pino-pretty": "^11.3.0",
     "tsx": "^4.23.12",
     "typescript": "6.0.3"
-  }
+  },
+  "packageManager": "yarn@4.12.0"
 }

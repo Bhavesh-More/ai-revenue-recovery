@@ -5,6 +5,10 @@
       "cache": false,
       "persistent": true
     },
+    "server": {
+      "cache": false,
+      "persistent": true
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": [
