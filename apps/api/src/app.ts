@@ -8,6 +8,7 @@ import { requestId } from "./lib/request-id.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { healthRouter } from "./routes/health.js";
+import { queueTestRouter } from "./routes/queue-test.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -54,6 +55,7 @@ export function createApp(deps: AppDeps = {}): Express {
   // routers
   app.use(healthRouter);
   app.use(`/api/${config.version}`, healthRouter);
+  app.use(`/api/${config.version}`, queueTestRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

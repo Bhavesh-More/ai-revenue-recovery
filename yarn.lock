@@ -1406,6 +1406,7 @@ __metadata:
   resolution: "@recovery/api@workspace:apps/api"
   dependencies:
     "@recovery/config": "workspace:*"
+    "@recovery/queue": "workspace:*"
     "@types/cors": "npm:^2.8.19"
     "@types/express": "npm:^5.0.6"
     "@types/node": "npm:^26.2.0"
@@ -1437,6 +1438,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@recovery/db@workspace:packages/db"
   dependencies:
+    "@recovery/config": "workspace:*"
     "@types/node": "npm:^26.2.0"
     dotenv: "npm:^16.4.5"
     drizzle-kit: "npm:^0.31.10"
@@ -1449,6 +1451,19 @@ __metadata:
 "@recovery/integrations@workspace:packages/integrations":
   version: 0.0.0-use.local
   resolution: "@recovery/integrations@workspace:packages/integrations"
+  languageName: unknown
+  linkType: soft
+
+"@recovery/queue@workspace:*, @recovery/queue@workspace:packages/queue":
+  version: 0.0.0-use.local
+  resolution: "@recovery/queue@workspace:packages/queue"
+  dependencies:
+    "@recovery/config": "workspace:*"
+    "@types/node": "npm:^26.2.0"
+    bullmq: "npm:^6.2.0"
+    ioredis: "npm:^6.0.0"
+    typescript: "npm:6.0.3"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
@@ -1479,11 +1494,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@recovery/worker@workspace:apps/worker"
   dependencies:
+    "@recovery/config": "workspace:*"
+    "@recovery/queue": "workspace:*"
     "@types/node": "npm:^26.2.0"
     bullmq: "npm:^6.2.0"
     ioredis: "npm:^6.0.0"
+    pino: "npm:^9.5.0"
     tsx: "npm:^4.23.12"
     typescript: "npm:6.0.3"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 

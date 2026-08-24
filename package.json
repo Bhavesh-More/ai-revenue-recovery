@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "turbo dev",
     "server": "turbo run server --filter=@recovery/api",
+    "worker": "turbo run dev --filter=@recovery/worker",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
