@@ -12,10 +12,12 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@recovery/audit": "workspace:*",
     "@recovery/case-lifecycle": "workspace:*",
     "@recovery/config": "workspace:*",
     "@recovery/event-ingestion": "workspace:*",
     "@recovery/queue": "workspace:*",
+    "@recovery/validation": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

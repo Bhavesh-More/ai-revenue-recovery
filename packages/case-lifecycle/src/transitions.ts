@@ -1,4 +1,4 @@
-import type { CaseState } from "@recovery/types";
+import type { CaseState, AuditAction } from "@recovery/types";
 import { InvalidStateTransitionError } from "./errors.js";
 
 export const ALLOWED_TRANSITIONS: Readonly<Record<CaseState, readonly CaseState[]>> = {
@@ -52,7 +52,7 @@ export function assertTransition(from: CaseState, to: CaseState): void {
 }
 
 // Audit action mapping for each case state. Used to generate audit events on state transitions.
-export const TRANSITION_AUDIT_ACTION: Readonly<Record<CaseState, string>> = {
+export const TRANSITION_AUDIT_ACTION: Readonly<Record<CaseState, AuditAction>> = {
   detected: "event_detected",
   investigating: "context_retrieved",
   action_selected: "decision_created",

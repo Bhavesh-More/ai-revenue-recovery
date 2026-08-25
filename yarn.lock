@@ -1405,9 +1405,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@recovery/api@workspace:apps/api"
   dependencies:
+    "@recovery/audit": "workspace:*"
     "@recovery/case-lifecycle": "workspace:*"
     "@recovery/config": "workspace:*"
+    "@recovery/event-ingestion": "workspace:*"
     "@recovery/queue": "workspace:*"
+    "@recovery/validation": "workspace:*"
     "@types/cors": "npm:^2.8.19"
     "@types/express": "npm:^5.0.6"
     "@types/node": "npm:^26.2.0"
@@ -1424,10 +1427,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@recovery/audit@workspace:*, @recovery/audit@workspace:packages/audit":
+  version: 0.0.0-use.local
+  resolution: "@recovery/audit@workspace:packages/audit"
+  dependencies:
+    "@recovery/db": "workspace:*"
+    "@recovery/types": "workspace:*"
+    typescript: "npm:6.0.3"
+  languageName: unknown
+  linkType: soft
+
 "@recovery/case-lifecycle@workspace:*, @recovery/case-lifecycle@workspace:packages/case-lifecycle":
   version: 0.0.0-use.local
   resolution: "@recovery/case-lifecycle@workspace:packages/case-lifecycle"
   dependencies:
+    "@recovery/audit": "workspace:*"
     "@recovery/db": "workspace:*"
     "@recovery/types": "workspace:*"
     typescript: "npm:6.0.3"
@@ -1460,10 +1474,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@recovery/event-ingestion@workspace:packages/event-ingestion":
+"@recovery/event-ingestion@workspace:*, @recovery/event-ingestion@workspace:packages/event-ingestion":
   version: 0.0.0-use.local
   resolution: "@recovery/event-ingestion@workspace:packages/event-ingestion"
   dependencies:
+    "@recovery/audit": "workspace:*"
     "@recovery/db": "workspace:*"
     "@recovery/types": "workspace:*"
     typescript: "npm:6.0.3"
@@ -1504,7 +1519,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@recovery/validation@workspace:packages/validation":
+"@recovery/validation@workspace:*, @recovery/validation@workspace:packages/validation":
   version: 0.0.0-use.local
   resolution: "@recovery/validation@workspace:packages/validation"
   dependencies:

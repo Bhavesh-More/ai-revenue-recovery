@@ -1,5 +1,5 @@
 {
-  "name": "@recovery/event-ingestion",
+  "name": "@recovery/audit",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -14,10 +14,8 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@recovery/audit": "workspace:*",
     "@recovery/db": "workspace:*",
-    "@recovery/types": "workspace:*",
-    "zod": "^4.4.3"
+    "@recovery/types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3"

@@ -1,7 +1,6 @@
 import { eq, desc, and, type SQL } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import {
-  auditEvents,
   recoveryCases,
   type RecoveryCaseRow,
   type NewRecoveryCaseRow,
@@ -11,6 +10,7 @@ import type {
   RiskTier,
   RecoveryDirectionCode,
 } from "@recovery/types";
+import { auditService } from "@recovery/audit";
 import {
   TRANSITION_AUDIT_ACTION,
   assertTransition,
@@ -74,7 +74,7 @@ export class CaseLifecycleService {
     return this.db.transaction(async (tx: PgTransaction<any, any, any>) => {
       const [created] = await tx.insert(recoveryCases).values(row).returning();
 
-      await this.recordAudit(
+      await auditService.record(
         {
           caseId: created.id,
           action: TRANSITION_AUDIT_ACTION.detected,
@@ -188,7 +188,7 @@ export class CaseLifecycleService {
         .where(eq(recoveryCases.id, input.caseId))
         .returning();
 
-      await this.recordAudit(
+      await auditService.record(
         {
           caseId: input.caseId,
           action: TRANSITION_AUDIT_ACTION[input.toState],
@@ -242,7 +242,7 @@ export class CaseLifecycleService {
           .where(eq(recoveryCases.id, input.caseId))
           .returning();
 
-        await this.recordAudit(
+        await auditService.record(
           {
             caseId: input.caseId,
             action: "recovery",
@@ -298,36 +298,6 @@ export class CaseLifecycleService {
       .returning();
     if (!updated) throw new CaseNotFoundError(caseId);
     return updated;
-  }
-
-  private async recordAudit(
-    input: {
-      caseId: string;
-      action: string;
-      summary: string;
-      detail: Record<string, unknown>;
-      actor: string;
-      decisionId?: string;
-    },
-    tx: any,
-  ): Promise<void> {
-    await tx.insert(auditEvents).values({
-      caseId: input.caseId,
-      action: input.action as
-        | "event_detected"
-        | "context_retrieved"
-        | "decision_created"
-        | "policy_checked"
-        | "action_executed"
-        | "outcome_received"
-        | "escalation"
-        | "recovery"
-        | "stop",
-      summary: input.summary,
-      detail: input.detail,
-      actor: input.actor,
-      decisionId: input.decisionId,
-    });
   }
 }
 

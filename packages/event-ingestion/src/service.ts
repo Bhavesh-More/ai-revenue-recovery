@@ -1,9 +1,10 @@
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
-import { auditEvents, recoveryCases, revenueEvents } from "@recovery/db/schema";
+import { recoveryCases, revenueEvents } from "@recovery/db/schema";
 import {
   TRANSITION_AUDIT_ACTION,
 } from "@recovery/case-lifecycle";
+import { auditService } from "@recovery/audit";
 import type {
   RecoveryCaseRow,
   RevenueEventRow,
@@ -125,7 +126,7 @@ export class EventIngestionService {
         caseRow = created;
         caseCreated = true;
 
-        await this.recordAudit(
+        await auditService.record(
           {
             caseId: created.id,
             action: TRANSITION_AUDIT_ACTION.detected,
@@ -150,34 +151,6 @@ export class EventIngestionService {
         case: caseRow,
         created: { event: eventCreated, case: caseCreated },
       };
-    });
-  }
-
-  private async recordAudit(
-    input: {
-      caseId: string;
-      action: string;
-      summary: string;
-      detail: Record<string, unknown>;
-      actor: string;
-    },
-    tx: any,
-  ): Promise<void> {
-    await tx.insert(auditEvents).values({
-      caseId: input.caseId,
-      action: input.action as
-        | "event_detected"
-        | "context_retrieved"
-        | "decision_created"
-        | "policy_checked"
-        | "action_executed"
-        | "outcome_received"
-        | "escalation"
-        | "recovery"
-        | "stop",
-      summary: input.summary,
-      detail: input.detail,
-      actor: input.actor,
     });
   }
 }
