@@ -1460,6 +1460,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@recovery/event-ingestion@workspace:packages/event-ingestion":
+  version: 0.0.0-use.local
+  resolution: "@recovery/event-ingestion@workspace:packages/event-ingestion"
+  dependencies:
+    "@recovery/db": "workspace:*"
+    "@recovery/types": "workspace:*"
+    typescript: "npm:6.0.3"
+    zod: "npm:^4.4.3"
+  languageName: unknown
+  linkType: soft
+
 "@recovery/integrations@workspace:packages/integrations":
   version: 0.0.0-use.local
   resolution: "@recovery/integrations@workspace:packages/integrations"
