@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { loadApiConfig } from "./config.js";
 import { getLogger } from "./lib/logger.js";
 import { disposeHealth } from "./routes/health.js";
+import { policyService } from "@recovery/policy";
 
 export interface RunningServer {
   server: Server;
@@ -36,6 +37,14 @@ export async function startServer(): Promise<RunningServer> {
   const log = getLogger();
   const app = createApp({ config });
   const server = createServer(app);
+
+  // Idempotent default-policy bootstrap so the engine has a usable policy at startup.
+  try {
+    const seeded = await policyService.seedDefault();
+    log.info({ policyId: seeded.id, name: seeded.name }, "Default policy ready");
+  } catch (err) {
+    log.warn({ err }, "Failed to seed default policy");
+  }
 
   const port = config.port || 3000;
   const host = config.host;

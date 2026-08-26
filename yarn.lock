@@ -1409,6 +1409,7 @@ __metadata:
     "@recovery/case-lifecycle": "workspace:*"
     "@recovery/config": "workspace:*"
     "@recovery/event-ingestion": "workspace:*"
+    "@recovery/policy": "workspace:*"
     "@recovery/queue": "workspace:*"
     "@recovery/validation": "workspace:*"
     "@types/cors": "npm:^2.8.19"
@@ -1489,6 +1490,17 @@ __metadata:
 "@recovery/integrations@workspace:packages/integrations":
   version: 0.0.0-use.local
   resolution: "@recovery/integrations@workspace:packages/integrations"
+  languageName: unknown
+  linkType: soft
+
+"@recovery/policy@workspace:*, @recovery/policy@workspace:packages/policy":
+  version: 0.0.0-use.local
+  resolution: "@recovery/policy@workspace:packages/policy"
+  dependencies:
+    "@recovery/case-lifecycle": "workspace:*"
+    "@recovery/db": "workspace:*"
+    "@recovery/types": "workspace:*"
+    typescript: "npm:6.0.3"
   languageName: unknown
   linkType: soft
 

@@ -12,6 +12,7 @@ import { queueTestRouter } from "./routes/queue-test.js";
 import { casesRouter } from "./routes/cases.js";
 import { eventsRouter } from "./routes/events.js";
 import { auditRouter } from "./routes/audit-events.js";
+import { policiesRouter, casesPolicyRouter } from "./routes/policies.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -62,6 +63,8 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(`/api/${config.version}`, casesRouter);
   app.use(`/api/${config.version}`, eventsRouter);
   app.use(`/api/${config.version}`, auditRouter);
+  app.use(`/api/${config.version}`, policiesRouter);
+  app.use(`/api/${config.version}`, casesPolicyRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

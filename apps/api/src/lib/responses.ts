@@ -18,7 +18,7 @@ export function accepted<T>(res: Response, data: T): Response {
   return res.status(202).json({ data });
 }
 
-export function okCollection<T>(
+export function collection<T>(
   res: Response,
   data: T[],
   pagination: PaginationMeta,

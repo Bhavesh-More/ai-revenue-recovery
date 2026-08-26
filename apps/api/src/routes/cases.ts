@@ -8,7 +8,7 @@ import {
 } from "@recovery/case-lifecycle";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { created, ok, okCollection } from "../lib/responses.js";
+import { created, ok, collection } from "../lib/responses.js";
 
 const recoveryDirection = z.enum([
   "01_payment_degradation",
@@ -137,7 +137,7 @@ casesRouter.get(
     const rows = await caseLifecycle.list(filter);
     const limit = filter.limit ?? 50;
     const offset = filter.offset ?? 0;
-    okCollection(res, rows, {
+    collection(res, rows, {
       page: Math.floor(offset / limit) + 1,
       limit,
       total: rows.length,

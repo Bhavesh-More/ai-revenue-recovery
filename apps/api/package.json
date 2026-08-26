@@ -16,6 +16,7 @@
     "@recovery/case-lifecycle": "workspace:*",
     "@recovery/config": "workspace:*",
     "@recovery/event-ingestion": "workspace:*",
+    "@recovery/policy": "workspace:*",
     "@recovery/queue": "workspace:*",
     "@recovery/validation": "workspace:*",
     "cors": "^2.8.6",
