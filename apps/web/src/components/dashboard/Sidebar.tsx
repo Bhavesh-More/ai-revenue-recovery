@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '@iconify/react';
 
 export interface SidebarProps {
@@ -21,8 +22,8 @@ export interface SidebarProps {
 
 export function Sidebar({
   activeItem = 'overview',
-  overviewHref = '#overview',
-  casesHref = '#',
+  overviewHref = '/',
+  casesHref = '/recovery-cases',
   batchesHref = '#',
   paymentDegradationHref = '#',
   checkoutRecoveryHref = '#',
@@ -48,6 +49,7 @@ export function Sidebar({
 
   return (
     <aside className="w-64 border-r border-[#E5E7EB] dark:border-[#2A2B2D] flex flex-col h-full shrink-0 font-mono bg-[#F8F9FA] dark:bg-[#171819] transition-colors">
+      {/* Brand Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 rounded flex items-center justify-center bg-[#1A1A1A] dark:bg-[#131416] border border-transparent dark:border-[#2A2B2D]">
           <Icon icon="lucide:zap" className="text-white text-lg" />
@@ -62,27 +64,27 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* tabs */}
+      {/* Main Navigation */}
       <div className="px-4 py-2">
         <p className="text-[10px] font-bold uppercase tracking-wider mb-3 px-2 text-[#8C8C8C] dark:text-[#6B7280]">
           Main
         </p>
         <nav className="space-y-1">
-          <a
+          <Link
             href={overviewHref}
             className={navClass('overview')}
           >
             <Icon icon="lucide:layout-dashboard" className="text-lg" />
             <span className="text-sm font-medium">Overview</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href={casesHref}
             className={navClass('cases')}
           >
             <Icon icon="lucide:briefcase" className="text-lg" />
             <span className="text-sm font-medium">Recovery Cases</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href={batchesHref}
             className={navClass('batches')}
           >
@@ -93,7 +95,7 @@ export function Sidebar({
                 {batchesCount}
               </span>
             )}
-          </a>
+          </Link>
         </nav>
       </div>
 
