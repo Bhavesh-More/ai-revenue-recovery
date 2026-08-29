@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { RecoveryCase, RecoveryCaseStatus, RecoveryCaseRisk } from '../../mocks/recoveryCases';
 
@@ -88,6 +90,12 @@ export function RecoveryCasesTable({
   sortDirection,
   onSort,
 }: RecoveryCasesTableProps) {
+  const router = useRouter();
+
+  const handleRowClick = (caseId: string) => {
+    router.push(`/recovery-cases/${caseId}`);
+  };
+
   return (
     <div className="overflow-x-auto scrollbar-hide">
       <table className="w-full text-sm text-left whitespace-nowrap font-mono">
@@ -157,13 +165,20 @@ export function RecoveryCasesTable({
             cases.map((item) => (
               <tr
                 key={item.id}
+                onClick={() => handleRowClick(item.id)}
                 className={`hover:bg-gray-50 dark:hover:bg-[#131416] transition-colors group cursor-pointer ${
                   item.isStopped ? 'opacity-60' : ''
                 }`}
               >
                 {/* Case ID */}
                 <td className="px-6 py-4 font-mono font-medium text-[#3B82F6]">
-                  {item.id}
+                  <Link
+                    href={`/recovery-cases/${item.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:underline"
+                  >
+                    {item.id}
+                  </Link>
                 </td>
 
                 {/* Customer */}
@@ -236,17 +251,22 @@ export function RecoveryCasesTable({
                   {item.owner === 'Human' && item.status === 'Escalated' ? (
                     <button
                       type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(item.id);
+                      }}
                       className="px-3 py-1 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] text-xs font-medium rounded hover:bg-black transition-colors cursor-pointer"
                     >
                       Review
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      className="opacity-0 group-hover:opacity-100 text-[#3B82F6] text-sm font-medium hover:underline transition-opacity cursor-pointer"
+                    <Link
+                      href={`/recovery-cases/${item.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="opacity-0 group-hover:opacity-100 text-[#3B82F6] text-sm font-medium hover:underline transition-opacity cursor-pointer inline-block"
                     >
                       View Details
-                    </button>
+                    </Link>
                   )}
                 </td>
               </tr>

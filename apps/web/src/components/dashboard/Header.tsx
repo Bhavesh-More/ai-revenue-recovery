@@ -28,7 +28,7 @@ export function Header({
   };
 
   return (
-    <header className="h-16 border-b border-[#E5E7EB] dark:border-[#2A2B2D] bg-white dark:bg-[#171819] sticky top-0 z-10 flex items-center justify-between px-8 shadow-sm font-mono transition-colors shrink-0 gap-4">
+    <header className="h-16 border-b border-[#E5E7EB] dark:border-[#2A2B2D] bg-white dark:bg-[#171819] sticky top-0 z-30 flex items-center justify-between px-8 shadow-sm font-mono transition-colors shrink-0 gap-4">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="relative w-full max-w-sm md:max-w-md">
           <Icon
