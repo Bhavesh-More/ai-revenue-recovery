@@ -6,6 +6,8 @@ export interface SidebarProps {
   overviewHref?: string;
   casesHref?: string;
   batchesHref?: string;
+  ingestionHref?: string;
+  approvalsHref?: string;
   paymentDegradationHref?: string;
   checkoutRecoveryHref?: string;
   subscriptionRecoveryHref?: string;
@@ -13,18 +15,21 @@ export interface SidebarProps {
   mandateRetryHref?: string;
   hinglishVoiceHref?: string;
   promiseToPayHref?: string;
-  approvalsHref?: string;
   policiesHref?: string;
   auditLogHref?: string;
   batchesCount?: number;
   showBatchesBadge?: boolean;
+  approvalsCount?: number;
+  showApprovalsBadge?: boolean;
 }
 
 export function Sidebar({
   activeItem = 'overview',
   overviewHref = '/',
   casesHref = '/recovery-cases',
-  batchesHref = '#',
+  batchesHref = '/batches',
+  ingestionHref,
+  approvalsHref = '/approvals',
   paymentDegradationHref = '#',
   checkoutRecoveryHref = '#',
   subscriptionRecoveryHref = '#',
@@ -32,14 +37,19 @@ export function Sidebar({
   mandateRetryHref = '#',
   hinglishVoiceHref = '#',
   promiseToPayHref = '#',
-  approvalsHref = '#',
   policiesHref = '#',
   auditLogHref = '#',
   batchesCount = 2,
   showBatchesBadge = true,
+  approvalsCount = 12,
+  showApprovalsBadge = false,
 }: SidebarProps) {
+  const targetBatchesHref = batchesHref || ingestionHref || '/batches';
+
   const navClass = (item: string) => {
-    const isActive = activeItem === item;
+    const isActive =
+      activeItem === item ||
+      (item === 'batches' && activeItem === 'ingestion');
     return `flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
       isActive
         ? 'bg-black text-white border-black shadow-sm dark:bg-black dark:text-white dark:border-[#374151]'
@@ -85,7 +95,7 @@ export function Sidebar({
             <span className="text-sm font-medium">Recovery Cases</span>
           </Link>
           <Link
-            href={batchesHref}
+            href={targetBatchesHref}
             className={navClass('batches')}
           >
             <Icon icon="lucide:layers" className="text-lg" />
@@ -93,6 +103,18 @@ export function Sidebar({
             {showBatchesBadge && (
               <span className="ml-auto text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF4444]">
                 {batchesCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            href={approvalsHref}
+            className={navClass('approvals')}
+          >
+            <Icon icon="lucide:check-circle" className="text-lg" />
+            <span className="text-sm font-medium">Approvals</span>
+            {showApprovalsBadge && (
+              <span className="ml-auto text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#F59E0B]">
+                {approvalsCount}
               </span>
             )}
           </Link>
@@ -142,10 +164,6 @@ export function Sidebar({
           System
         </p>
         <nav className="space-y-1">
-          <a href={approvalsHref} className={navClass('approvals')}>
-            <Icon icon="lucide:check-circle" className="text-lg" />
-            <span className="text-sm font-medium">Approvals</span>
-          </a>
           <a href={policiesHref} className={navClass('policies')}>
             <Icon icon="lucide:shield" className="text-lg" />
             <span className="text-sm font-medium">Policies</span>
