@@ -12,6 +12,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@recovery/agent": "workspace:*",
     "@recovery/audit": "workspace:*",
     "@recovery/case-lifecycle": "workspace:*",
     "@recovery/config": "workspace:*",

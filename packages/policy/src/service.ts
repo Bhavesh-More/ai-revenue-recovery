@@ -260,7 +260,10 @@ export class PolicyService {
         messagesSentCount: caseActions.filter((a: RecoveryActionRow) =>
           isCommunicationAction(a.type as RecoveryActionType),
         ).length,
-        proposedAmountMinor: input.proposedAmountMinor,
+        proposedAmountMinor:
+          input.proposedAmountMinor !== undefined
+            ? input.proposedAmountMinor
+            : Number(caseRow.amountAtRiskMinor),
       },
     );
 

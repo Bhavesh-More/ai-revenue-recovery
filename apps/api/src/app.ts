@@ -13,6 +13,8 @@ import { casesRouter } from "./routes/cases.js";
 import { eventsRouter } from "./routes/events.js";
 import { auditRouter } from "./routes/audit-events.js";
 import { policiesRouter, casesPolicyRouter } from "./routes/policies.js";
+import { casesAgentRouter } from "./routes/cases-agent.js";
+import { llmHealthRouter } from "./routes/llm-health.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -65,6 +67,8 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(`/api/${config.version}`, auditRouter);
   app.use(`/api/${config.version}`, policiesRouter);
   app.use(`/api/${config.version}`, casesPolicyRouter);
+  app.use(`/api/${config.version}`, casesAgentRouter);
+  app.use(`/api/${config.version}`, llmHealthRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

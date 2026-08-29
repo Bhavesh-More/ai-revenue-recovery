@@ -7,7 +7,7 @@ import {
 } from "@recovery/validation";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { okCollection } from "../lib/responses.js";
+import { collection } from "../lib/responses.js";
 
 export const auditRouter = Router();
 
@@ -37,7 +37,7 @@ auditRouter.get(
       limit: f.limit,
       offset: f.offset,
     });
-    okCollection(res, rows, {
+    collection(res, rows, {
       page: f.page,
       limit: f.limit,
       total: rows.length,
@@ -76,7 +76,7 @@ auditRouter.get(
       limit: f.limit,
       offset: f.offset,
     });
-    okCollection(res, rows, {
+    collection(res, rows, {
       page: f.page,
       limit: f.limit,
       total: rows.length,

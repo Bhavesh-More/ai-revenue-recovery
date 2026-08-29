@@ -104,6 +104,14 @@ export class ApiError extends Error {
       expose: false,
     });
   }
+
+  static gateway(
+    code: ApiErrorCode,
+    message: string,
+    details?: Record<string, unknown>,
+  ): ApiError {
+    return new ApiError(code, message, 502, { details });
+  }
 }
 
 export interface ValidationFieldError {

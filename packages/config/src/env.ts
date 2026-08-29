@@ -33,9 +33,10 @@ const RawEnvSchema = z.object({
 
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
-  OLLAMA_API_KEY: z.string().optional(),
-  OLLAMA_BASE_URL: z.string().default("https://ollama.com"),
+  OLLAMA_API_KEY: z.string().min(1, "OLLAMA_API_KEY is required"),
+  OLLAMA_BASE_URL: z.string().default("https://ollama.com/v1"),
   OLLAMA_MODEL: z.string().default("gpt-oss:120b"),
+  OLLAMA_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),

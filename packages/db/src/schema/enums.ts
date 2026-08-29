@@ -104,8 +104,11 @@ export const auditActionEnum = pgEnum("audit_action", [
   "event_detected",
   "context_retrieved",
   "decision_created",
+  "decision_failed",
   "policy_checked",
   "action_executed",
+  "action_failed",
+  "communication_sent",
   "outcome_received",
   "escalation",
   "recovery",
@@ -149,4 +152,19 @@ export const mandateStateEnum = pgEnum("mandate_state", [
   "cancelled",
   "expired",
   "unknown",
+]);
+
+export const agentDecisionTypeEnum = pgEnum("agent_decision_type", [
+  "analyze",
+  "recovery",
+]);
+
+export const agentDecisionStatusEnum = pgEnum("agent_decision_status", [
+  "pending",
+  "awaiting_approval",
+  "approved",
+  "rejected",
+  "executed",
+  "failed",
+  "stopped",
 ]);

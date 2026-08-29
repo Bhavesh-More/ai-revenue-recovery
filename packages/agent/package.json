@@ -1,4 +1,34 @@
 {
-  "name": "agent",
+  "name": "@recovery/agent",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.4.0",
+    "@recovery/audit": "workspace:*",
+    "@recovery/case-lifecycle": "workspace:*",
+    "@recovery/db": "workspace:*",
+    "@recovery/llm": "workspace:*",
+    "@recovery/policy": "workspace:*",
+    "@recovery/types": "workspace:*",
+    "@recovery/validation": "workspace:*",
+    "langsmith": "^0.3.0",
+    "pino": "^9.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  },
   "packageManager": "yarn@4.12.0"
 }
