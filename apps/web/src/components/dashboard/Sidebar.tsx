@@ -37,7 +37,7 @@ export function Sidebar({
   mandateRetryHref = '#',
   hinglishVoiceHref = '#',
   promiseToPayHref = '#',
-  policiesHref = '#',
+  policiesHref = '/policies',
   auditLogHref = '#',
   batchesCount = 2,
   showBatchesBadge = true,
@@ -164,10 +164,10 @@ export function Sidebar({
           System
         </p>
         <nav className="space-y-1">
-          <a href={policiesHref} className={navClass('policies')}>
+          <Link href={policiesHref} className={navClass('policies')}>
             <Icon icon="lucide:shield" className="text-lg" />
             <span className="text-sm font-medium">Policies</span>
-          </a>
+          </Link>
           <a href={auditLogHref} className={navClass('audit')}>
             <Icon icon="lucide:file-text" className="text-lg" />
             <span className="text-sm font-medium">Audit Log</span>

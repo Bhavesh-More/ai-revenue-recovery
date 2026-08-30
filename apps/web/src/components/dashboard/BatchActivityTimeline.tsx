@@ -28,9 +28,9 @@ export function BatchActivityTimeline({
   };
 
   return (
-    <div className="bg-white dark:bg-[#171819] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-xl shadow-sm flex flex-col h-[400px] font-mono transition-colors">
+    <div className="bg-white dark:bg-[#171819] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-xl shadow-sm flex flex-col flex-1 min-h-[380px] max-h-[600px] font-mono transition-colors overflow-hidden">
       {/* Header */}
-      <div className="p-5 border-b border-[#E5E7EB] dark:border-[#2A2B2D] flex justify-between items-center">
+      <div className="p-5 border-b border-[#E5E7EB] dark:border-[#2A2B2D] flex justify-between items-center shrink-0">
         <h2 className="text-[11px] font-bold text-[#4A4A4A] dark:text-[#9CA3AF] uppercase tracking-wider flex items-center gap-2">
           <Icon icon="lucide:activity" className="text-[#3B82F6] text-base" />
           Live Processing Activity
@@ -51,7 +51,7 @@ export function BatchActivityTimeline({
       </div>
 
       {/* Timeline Event List */}
-      <div className="p-6 overflow-y-auto flex-1 scrollbar-hide">
+      <div className="p-6 overflow-y-auto flex-1 scrollbar-hide min-h-0">
         <div className="space-y-6">
           {activity.map((event, index) => {
             const isLast = index === activity.length - 1;

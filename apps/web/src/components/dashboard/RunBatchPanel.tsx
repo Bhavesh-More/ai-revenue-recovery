@@ -104,7 +104,7 @@ export function RunBatchPanel({
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit} className="p-6 flex-1 flex flex-col gap-5 overflow-y-auto max-h-[850px] scrollbar-hide">
+      <form onSubmit={handleSubmit} className="p-6 flex-1 flex flex-col gap-5">
         {/* Batch Name */}
         <div>
           <label
