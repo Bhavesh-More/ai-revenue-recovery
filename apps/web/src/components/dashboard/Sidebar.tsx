@@ -38,7 +38,7 @@ export function Sidebar({
   hinglishVoiceHref = '#',
   promiseToPayHref = '#',
   policiesHref = '/policies',
-  auditLogHref = '#',
+  auditLogHref = '/audit-log',
   batchesCount = 2,
   showBatchesBadge = true,
   approvalsCount = 12,
@@ -168,10 +168,10 @@ export function Sidebar({
             <Icon icon="lucide:shield" className="text-lg" />
             <span className="text-sm font-medium">Policies</span>
           </Link>
-          <a href={auditLogHref} className={navClass('audit')}>
+          <Link href={auditLogHref} className={navClass('audit')}>
             <Icon icon="lucide:file-text" className="text-lg" />
             <span className="text-sm font-medium">Audit Log</span>
-          </a>
+          </Link>
         </nav>
       </div>
 
