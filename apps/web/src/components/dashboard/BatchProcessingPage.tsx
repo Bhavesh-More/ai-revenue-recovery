@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { RunBatchPanel } from './RunBatchPanel';
 import { ActiveBatchPanel } from './ActiveBatchPanel';
 import { BatchActivityTimeline } from './BatchActivityTimeline';
-import { ProjectedResultsPanel } from './ProjectedResultsPanel';
 import {
   Batch,
   INITIAL_BATCH_DATA,
   BatchActivityEvent,
+  SyntheticBatchConfig,
 } from '../../mocks/batches';
 
 export function BatchProcessingPage() {
@@ -55,33 +55,37 @@ export function BatchProcessingPage() {
     }));
   };
 
-  // Generate & Run new batch
-  const handleGenerateBatch = (params: {
-    direction: string;
-    scenarioName: string;
-    customers: number;
-    avgPayment: number;
-    generateHistory: boolean;
-    enableSimulation: boolean;
-  }) => {
+  // Generate & Run new synthetic batch
+  const handleGenerateBatch = (config: SyntheticBatchConfig) => {
     setIsGenerating(true);
 
     setTimeout(() => {
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const randomId = Math.floor(100 + Math.random() * 900);
-      const batchId = `BATCH-${dateStr}-${randomId}`;
+      const batchId = `BATCH-${dateStr}-${config.randomSeed.toString().slice(0, 4)}`;
 
-      const totalRisk = params.customers * params.avgPayment;
-      const totalRecovered = Math.floor(totalRisk * 0.431);
+      const avgAmount = (config.minAmount + config.maxAmount) / 2;
+      const totalRisk = Math.round(config.numberOfCases * avgAmount);
+      const totalRecovered = Math.round(totalRisk * 0.431);
+
+      const directionLabel =
+        config.generationMode === 'mixed'
+          ? 'Mixed (5 Streams)'
+          : config.singleDirection || 'Subscription Recovery';
+
+      const edgeCaseTags: string[] = [];
+      if (config.edgeCases.hardshipClaims) edgeCaseTags.push('Hardship');
+      if (config.edgeCases.highExposureOverrides) edgeCaseTags.push('VIP >₹5L');
+      if (config.edgeCases.repeatedDegradationSurge) edgeCaseTags.push('Spike Surge');
+      if (config.edgeCases.disputedCharges) edgeCaseTags.push('Disputes');
 
       const newActivityEvent: BatchActivityEvent = {
         id: `batch_${Date.now()}`,
-        caseNumber: `Batch #${randomId}`,
-        tag: params.scenarioName,
+        caseNumber: `Batch ${batchId}`,
+        tag: directionLabel,
         time: 'Just now',
-        description: `Batch generated for ${params.customers.toLocaleString()} customers.`,
-        highlightText: 'Processing initiated',
+        description: `Synthetic cases generated (${config.numberOfCases.toLocaleString()} cases, Seed #${config.randomSeed}).`,
+        highlightText: edgeCaseTags.length > 0 ? `Edge cases: ${edgeCaseTags.join(', ')}` : 'Pipeline running',
         highlightColor: 'blue',
         icon: 'lucide:play',
         iconBgClass: 'bg-[#3B82F6]/10 dark:bg-[#3B82F6]/20 border border-[#3B82F6]/30',
@@ -90,16 +94,21 @@ export function BatchProcessingPage() {
 
       setBatch({
         id: batchId,
-        direction: params.direction,
-        scenarioName: params.scenarioName,
+        direction: directionLabel,
+        scenarioName: config.batchName,
         status: 'processing',
+        config,
         metrics: {
-          totalCases: params.customers,
-          processedCases: Math.floor(params.customers * 0.15),
-          recoveredCases: Math.floor(params.customers * 0.08),
-          waitingCases: Math.floor(params.customers * 0.2),
-          escalatedCases: Math.floor(params.customers * 0.03),
-          stoppedCases: Math.floor(params.customers * 0.02),
+          totalCases: config.numberOfCases,
+          processedCases: Math.floor(config.numberOfCases * 0.15),
+          recoveredCases: Math.floor(config.numberOfCases * 0.08),
+          waitingCases: Math.floor(config.numberOfCases * 0.2),
+          escalatedCases: config.edgeCases.highExposureOverrides
+            ? Math.floor(config.numberOfCases * 0.04)
+            : Math.floor(config.numberOfCases * 0.01),
+          stoppedCases: config.edgeCases.hardshipClaims
+            ? Math.floor(config.numberOfCases * 0.03)
+            : 0,
           failedCases: 2,
           progress: 15.0,
         },
@@ -124,33 +133,27 @@ export function BatchProcessingPage() {
 
   return (
     <div className="p-6 lg:p-8 flex flex-col gap-6 font-mono">
-      {/* Top Row: Run Batch (1/3) & Active Batch (2/3) */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <RunBatchPanel
-          onGenerateBatch={handleGenerateBatch}
-          isGenerating={isGenerating}
-        />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        {/* Left Column: Synthetic Case Generator (1/3 width on xl) */}
+        <div className="col-span-1">
+          <RunBatchPanel
+            onGenerateBatch={handleGenerateBatch}
+            isGenerating={isGenerating}
+          />
+        </div>
 
-        <div className="col-span-1 xl:col-span-2">
+        {/* Right Column: Active Batch + Live Processing Activity (2/3 width on xl) */}
+        <div className="col-span-1 xl:col-span-2 flex flex-col gap-6">
           <ActiveBatchPanel
             batch={batch}
             onTogglePause={handleTogglePause}
           />
-        </div>
-      </div>
 
-      {/* Bottom Row: Live Processing Activity (2/3) & Projected Results (1/3) */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="col-span-1 xl:col-span-2">
           <BatchActivityTimeline
             activity={batch.activity}
             isLive={batch.status === 'processing'}
           />
         </div>
-
-        <ProjectedResultsPanel
-          projectedResults={batch.projectedResults}
-        />
       </div>
     </div>
   );
