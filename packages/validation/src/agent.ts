@@ -85,6 +85,36 @@ export const stopCaseInputSchema = z.object({
   reason: z.string().min(1).max(500),
 });
 
+// New tool input schemas for retrieval and case creation
+export const retrieveCustomerInputSchema = z.object({
+  caseId: z.uuid(),
+  customerId: z.uuid(),
+});
+
+export const retrievePaymentInputSchema = z.object({
+  caseId: z.uuid(),
+  paymentId: z.uuid(),
+});
+
+export const retrieveSubscriptionInputSchema = z.object({
+  caseId: z.uuid(),
+  subscriptionId: z.uuid(),
+});
+
+export const createRecoveryCaseInputSchema = z.object({
+  customerId: z.uuid(),
+  direction: z.string().min(1), // direction code like "01_payment_degradation"
+  amountAtRiskMinor: z.number().int().positive(),
+  currency: z.string().min(3).max(3),
+});
+
+export const scheduleRecoveryActionInputSchema = z.object({
+  caseId: z.uuid(),
+  actionType: z.string().min(1), // matches registered tool name
+  scheduledFor: z.iso.datetime().optional(),
+  payload: z.any().optional(),
+});
+
 
 export const analyzeCaseSchema = z.object({
   actor: z.string().min(1).max(120).optional(),

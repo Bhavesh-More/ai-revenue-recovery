@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useTheme } from '../../context/ThemeContext';
 
+import Link from 'next/link';
+
 export interface HeaderProps {
   showNotificationBadge?: boolean;
   onSearch?: (query: string) => void;
   onCalendarClick?: () => void;
   onFilterClick?: () => void;
   onNotificationClick?: () => void;
+  runBatchHref?: string;
+  onRunBatchClick?: () => void;
 }
 
 export function Header({
@@ -18,6 +22,8 @@ export function Header({
   onCalendarClick,
   onFilterClick,
   onNotificationClick,
+  runBatchHref = '/batches',
+  onRunBatchClick,
 }: HeaderProps) {
   const [query, setQuery] = useState('');
   const { theme, toggleTheme } = useTheme();
@@ -28,7 +34,7 @@ export function Header({
   };
 
   return (
-    <header className="h-16 border-b border-[#E5E7EB] dark:border-[#2A2B2D] bg-white dark:bg-[#171819] sticky top-0 z-10 flex items-center justify-between px-8 shadow-sm font-mono transition-colors shrink-0 gap-4">
+    <header className="h-16 border-b border-[#E5E7EB] dark:border-[#2A2B2D] bg-white dark:bg-[#171819] sticky top-0 z-30 flex items-center justify-between px-8 shadow-sm font-mono transition-colors shrink-0 gap-4">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="relative w-full max-w-sm md:max-w-md">
           <Icon
@@ -76,6 +82,15 @@ export function Header({
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#FF4444] rounded-full" />
           )}
         </button>
+
+        <Link
+          href={runBatchHref}
+          onClick={onRunBatchClick}
+          className="flex items-center gap-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] px-4 py-2 rounded-lg text-sm font-bold hover:bg-black dark:hover:bg-gray-100 transition-colors shadow-sm cursor-pointer shrink-0"
+        >
+          <Icon icon="lucide:play" className="text-base" />
+          <span>Run Batch</span>
+        </Link>
 
         <button
           type="button"
