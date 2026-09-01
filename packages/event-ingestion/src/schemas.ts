@@ -47,6 +47,15 @@ export const paymentFailedSchema = baseFields.extend({
   attemptCount: z.number().int().nonnegative().default(1),
   failureReason: failureReasonCode.optional(),
   provider: z.string().optional(),
+  providerCode: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  bank: z.string().optional(),
+  region: z.string().optional(),
+  baselineSuccessRate: z.number().min(0).max(1).optional(),
+  currentSuccessRate: z.number().min(0).max(1).optional(),
+  similarFailureCount: z.number().int().nonnegative().optional(),
+  affectedCustomerCount: z.number().int().nonnegative().optional(),
+  timeWindowMinutes: z.number().int().positive().optional(),
 });
 
 export const paymentSucceededSchema = baseFields.extend({

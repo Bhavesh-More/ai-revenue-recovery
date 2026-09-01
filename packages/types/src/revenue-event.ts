@@ -37,8 +37,19 @@ export type FailureReasonCode =
 export interface PaymentFailedPayload {
   paymentId: PaymentId;
   providerCode?: string;
-  reasonCode: FailureReasonCode;
+  provider?: string;
+  paymentMethod?: string;
+  bank?: string;
+  region?: string;
+  reasonCode?: FailureReasonCode;
+  failureReason?: FailureReasonCode;
   retryEligible: boolean;
+  attemptCount?: number;
+  baselineSuccessRate?: number;
+  currentSuccessRate?: number;
+  similarFailureCount?: number;
+  affectedCustomerCount?: number;
+  timeWindowMinutes?: number;
 }
 
 export interface PaymentSucceededPayload {

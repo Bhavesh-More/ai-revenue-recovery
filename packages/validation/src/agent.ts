@@ -41,14 +41,14 @@ export const sendWhatsappInputSchema = z.object({
 export const retryPaymentInputSchema = z.object({
   customerId: z.uuid(),
   caseId: z.uuid(),
-  paymentId: z.uuid().optional(),
+  paymentId: z.string().min(1).optional(),
 });
 
 export const scheduleRetryInputSchema = z.object({
   customerId: z.uuid(),
   caseId: z.uuid(),
   scheduledFor: z.iso.datetime(),
-  paymentId: z.uuid().optional(),
+  paymentId: z.string().min(1).optional(),
 });
 
 export const sendPaymentLinkInputSchema = z.object({

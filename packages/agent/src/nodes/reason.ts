@@ -1,11 +1,15 @@
+import { eq } from "drizzle-orm";
 import { auditService } from "@recovery/audit";
 import { caseLifecycle } from "@recovery/case-lifecycle";
+import { recoveryCases } from "@recovery/db/schema";
 import { agentReasonerOutputSchema } from "@recovery/validation";
+import { reasonOverPaymentDegradationFacts } from "../directions/payment-degradation/analyzer.js";
 import type { AgentStateType } from "../state.js";
 import type { Reasoner } from "../reasoner.js";
 import type { DecisionService, AgentDecisionType } from "../decision-service.js";
 
 export interface ReasonDeps {
+  db: any;
   reasoner: Reasoner;
   decisionService: DecisionService;
 }
@@ -15,6 +19,41 @@ export function reasonNode(deps: ReasonDeps) {
     const caseRow = await caseLifecycle.findById(state.caseId);
     const type: AgentDecisionType =
       state.phase === "context_loaded" ? "analyze" : "recovery";
+
+    if (caseRow.direction === "01_payment_degradation") {
+      const analysis = reasonOverPaymentDegradationFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 01 classified payment degradation as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction01",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
 
     const output = await deps.reasoner.reason({
       caseId: state.caseId,
