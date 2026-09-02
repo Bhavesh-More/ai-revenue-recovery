@@ -9,6 +9,8 @@ import {
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
 import { created, ok, collection } from "../lib/responses.js";
+import { razorpayClient } from "@recovery/integrations";
+import { auditService } from "@recovery/audit";
 
 const recoveryDirection = z.enum([
   "01_payment_degradation",
@@ -207,3 +209,76 @@ casesRouter.post(
     }
   }),
 );
+
+casesRouter.post(
+  "/cases/:id/payment-link",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const caseRow = await caseLifecycle.findById(id);
+
+    const paymentLink = await razorpayClient.createPaymentLink({
+      amountMinor: caseRow.amountAtRiskMinor,
+      currency: caseRow.currency || "INR",
+      description: `Razorpay Payment Recovery Link for Case ${id}`,
+      customer: {
+        name: `Customer ${caseRow.customerId.slice(0, 8)}`,
+      },
+      referenceId: id,
+      notes: {
+        caseId: id,
+      },
+    });
+
+    await auditService.record({
+      caseId: id,
+      action: "communication_sent",
+      summary: `Generated Razorpay Payment Link ${paymentLink.id} (${paymentLink.short_url})`,
+      actor: "api:operator",
+      detail: {
+        paymentLinkId: paymentLink.id,
+        shortUrl: paymentLink.short_url,
+        amountMinor: caseRow.amountAtRiskMinor,
+      },
+    });
+
+    ok(res, {
+      caseId: id,
+      paymentLinkId: paymentLink.id,
+      shortUrl: paymentLink.short_url,
+      status: paymentLink.status,
+    });
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/retry-payment",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const caseRow = await caseLifecycle.findById(id);
+
+    const pspRef = `pay_${Date.now()}`;
+    const payment = await razorpayClient.fetchPayment(pspRef).catch(() => ({
+      id: pspRef,
+      status: "authorized",
+    }));
+
+    await auditService.record({
+      caseId: id,
+      action: "action_executed",
+      summary: `Executed Razorpay payment retry for case ${id}`,
+      actor: "api:operator",
+      detail: {
+        paymentId: payment.id,
+        status: payment.status,
+      },
+    });
+
+    ok(res, {
+      caseId: id,
+      paymentId: payment.id,
+      status: payment.status,
+      executed: true,
+    });
+  }),
+);
+

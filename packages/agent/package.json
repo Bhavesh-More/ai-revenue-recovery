@@ -19,6 +19,7 @@
     "@recovery/audit": "workspace:*",
     "@recovery/case-lifecycle": "workspace:*",
     "@recovery/db": "workspace:*",
+    "@recovery/integrations": "workspace:*",
     "@recovery/llm": "workspace:*",
     "@recovery/policy": "workspace:*",
     "@recovery/types": "workspace:*",

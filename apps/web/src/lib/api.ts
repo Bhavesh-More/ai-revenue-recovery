@@ -182,6 +182,18 @@ export async function fetchPromiseToPayCases(): Promise<ApiCase[]> {
   return fetchJson<ApiCase[]>('/promises').catch(() => fetchRecoveryCases({ direction: '07_promise_to_pay' }));
 }
 
+export async function createCasePaymentLink(caseId: string): Promise<{ paymentLinkId: string; shortUrl: string }> {
+  return fetchJson<{ paymentLinkId: string; shortUrl: string }>(`/cases/${caseId}/payment-link`, {
+    method: 'POST',
+  });
+}
+
+export async function retryCasePayment(caseId: string): Promise<{ paymentId: string; status: string; executed: boolean }> {
+  return fetchJson<{ paymentId: string; status: string; executed: boolean }>(`/cases/${caseId}/retry-payment`, {
+    method: 'POST',
+  });
+}
+
 export function formatCurrencyMinor(minor: number, currency: string = 'INR'): string {
   const rupees = Math.round(minor / 100);
   if (rupees >= 10000000) {
