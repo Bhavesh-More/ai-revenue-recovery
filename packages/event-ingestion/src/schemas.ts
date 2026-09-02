@@ -79,6 +79,14 @@ export const subscriptionRenewalFailedSchema = baseFields.extend({
   type: z.literal("subscription.renewal_failed"),
   subscriptionId: z.string().min(1),
   failureReason: failureReasonCode.optional(),
+  planId: z.string().optional(),
+  billingCycle: z.enum(["monthly", "quarterly", "annual"]).optional(),
+  tenureMonths: z.number().int().nonnegative().optional(),
+  previousSuccessfulRenewals: z.number().int().nonnegative().optional(),
+  failedRenewalCount: z.number().int().nonnegative().optional(),
+  gracePeriodDaysRemaining: z.number().int().nonnegative().optional(),
+  mrrMinor: z.number().int().nonnegative().optional(),
+  estimatedLtvMinor: z.number().int().nonnegative().optional(),
 });
 
 export const invoiceOverdueSchema = baseFields.extend({

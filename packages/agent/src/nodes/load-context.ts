@@ -102,6 +102,16 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "technical_errors_count", payload.technicalErrorsCount);
       pushIfPresent(facts, "intent_score", payload.intentScore);
       pushIfPresent(facts, "previous_abandoned_count", payload.previousAbandonedCount);
+      // failed subscription fields
+      pushIfPresent(facts, "subscription_id", payload.subscriptionId);
+      pushIfPresent(facts, "plan_id", payload.planId);
+      pushIfPresent(facts, "billing_cycle", payload.billingCycle);
+      pushIfPresent(facts, "tenure_months", payload.tenureMonths);
+      pushIfPresent(facts, "previous_successful_renewals", payload.previousSuccessfulRenewals);
+      pushIfPresent(facts, "failed_renewal_count", payload.failedRenewalCount);
+      pushIfPresent(facts, "grace_period_days_remaining", payload.gracePeriodDaysRemaining);
+      pushIfPresent(facts, "mrr_minor", payload.mrrMinor);
+      pushIfPresent(facts, "estimated_ltv_minor", payload.estimatedLtvMinor);
     }
 
     await auditService.record({
