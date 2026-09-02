@@ -5,6 +5,7 @@ export const policyDecisionSchema = z.enum(["allow", "deny", "require_approval"]
 export const recoveryActionTypeSchema = z.enum([
   "retry_payment",
   "send_payment_link",
+  "send_resume_checkout_link",
   "send_email",
   "send_sms",
   "send_whatsapp",

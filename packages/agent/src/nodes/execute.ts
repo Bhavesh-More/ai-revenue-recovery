@@ -20,6 +20,7 @@ const CUSTOMER_ACTION_REQUIRED_ACTIONS = new Set([
   "send_email",
   "send_sms",
   "send_whatsapp",
+  "send_resume_checkout_link",
 ]);
 
 export interface ExecuteDeps {

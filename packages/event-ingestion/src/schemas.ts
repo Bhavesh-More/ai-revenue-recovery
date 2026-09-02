@@ -67,6 +67,12 @@ export const checkoutAbandonedSchema = baseFields.extend({
   type: z.literal("checkout.abandoned"),
   checkoutSessionId: z.string().min(1),
   lastStep: z.enum(["cart", "address", "payment", "review"]).optional(),
+  abandonmentDurationMinutes: z.number().int().nonnegative().optional(),
+  cartValueMinor: z.number().int().nonnegative().optional(),
+  shippingCostMinor: z.number().int().nonnegative().optional(),
+  technicalErrorsCount: z.number().int().nonnegative().optional(),
+  intentScore: z.number().min(0).max(1).optional(),
+  previousAbandonedCount: z.number().int().nonnegative().optional(),
 });
 
 export const subscriptionRenewalFailedSchema = baseFields.extend({

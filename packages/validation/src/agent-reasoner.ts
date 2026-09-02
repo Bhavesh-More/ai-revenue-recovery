@@ -3,6 +3,7 @@ import { z } from "zod";
 export const agentActionTypeSchema = z.enum([
   "retry_payment",
   "send_payment_link",
+  "send_resume_checkout_link",
   "send_email",
   "send_sms",
   "send_whatsapp",

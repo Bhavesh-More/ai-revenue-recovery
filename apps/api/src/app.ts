@@ -16,6 +16,7 @@ import { policiesRouter, casesPolicyRouter } from "./routes/policies.js";
 import { casesAgentRouter } from "./routes/cases-agent.js";
 import { llmHealthRouter } from "./routes/llm-health.js";
 import { paymentRecoveryRouter } from "./routes/payment-recovery.js";
+import { checkoutRecoveryRouter } from "./routes/checkout-recovery.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -71,6 +72,7 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(`/api/${config.version}`, casesAgentRouter);
   app.use(`/api/${config.version}`, llmHealthRouter);
   app.use(`/api/${config.version}`, paymentRecoveryRouter);
+  app.use(`/api/${config.version}`, checkoutRecoveryRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

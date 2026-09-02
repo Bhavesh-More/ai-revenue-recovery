@@ -59,6 +59,13 @@ export const sendPaymentLinkInputSchema = z.object({
   channel: toolChannelSchema.optional(),
 });
 
+export const sendResumeCheckoutLinkInputSchema = z.object({
+  customerId: z.uuid(),
+  caseId: z.uuid(),
+  lastSeenPage: z.string().optional(),
+  channel: toolChannelSchema.optional(),
+});
+
 export const requestPaymentMethodUpdateInputSchema = z.object({
   customerId: z.uuid(),
   caseId: z.uuid(),

@@ -12,6 +12,7 @@ const COMMUNICATION_ACTION_TYPES: readonly RecoveryActionType[] = [
   "send_email",
   "send_sms",
   "send_whatsapp",
+  "send_resume_checkout_link",
   "start_voice_call",
 ];
 

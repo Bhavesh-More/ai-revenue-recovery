@@ -73,6 +73,7 @@ export const failureReasonEnum = pgEnum("failure_reason", [
 export const recoveryActionTypeEnum = pgEnum("recovery_action_type", [
   "retry_payment",
   "send_payment_link",
+  "send_resume_checkout_link",
   "send_email",
   "send_sms",
   "send_whatsapp",

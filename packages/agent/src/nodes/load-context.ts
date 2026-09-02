@@ -80,6 +80,7 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "event_type", originatingEvent.type);
       pushIfPresent(facts, "event_source", originatingEvent.source);
       pushIfPresent(facts, "event_external_id", originatingEvent.externalId);
+      // payment-degradation (direction 01) fields
       pushIfPresent(facts, "payment_id", payload.paymentId);
       pushIfPresent(facts, "failure_reason", payload.failureReason);
       pushIfPresent(facts, "provider", payload.provider);
@@ -93,6 +94,14 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "similar_failure_count", payload.similarFailureCount);
       pushIfPresent(facts, "affected_customer_count", payload.affectedCustomerCount);
       pushIfPresent(facts, "time_window_minutes", payload.timeWindowMinutes);
+      // checkout drop-off fields
+      pushIfPresent(facts, "last_seen_page", payload.lastStep);
+      pushIfPresent(facts, "abandonment_duration_minutes", payload.abandonmentDurationMinutes);
+      pushIfPresent(facts, "cart_value_minor", payload.cartValueMinor);
+      pushIfPresent(facts, "shipping_cost_minor", payload.shippingCostMinor);
+      pushIfPresent(facts, "technical_errors_count", payload.technicalErrorsCount);
+      pushIfPresent(facts, "intent_score", payload.intentScore);
+      pushIfPresent(facts, "previous_abandoned_count", payload.previousAbandonedCount);
     }
 
     await auditService.record({
