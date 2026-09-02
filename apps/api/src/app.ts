@@ -28,6 +28,8 @@ import { webhooksRazorpayRouter } from "./routes/webhooks-razorpay.js";
 import { streamRouter } from "./routes/stream.js";
 import { jobsRouter } from "./routes/jobs.js";
 import { observabilityRouter } from "./routes/observability.js";
+import { metricsRouter } from "./routes/metrics.js";
+import { scenariosRouter } from "./routes/scenarios.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -130,6 +132,10 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(jobsRouter);
   app.use(`/api/${config.version}`, observabilityRouter);
   app.use(observabilityRouter);
+  app.use(`/api/${config.version}`, metricsRouter);
+  app.use(metricsRouter);
+  app.use(`/api/${config.version}`, scenariosRouter);
+  app.use(scenariosRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
