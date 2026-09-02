@@ -178,6 +178,15 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "sentiment", payload.sentiment);
       pushIfPresent(facts, "voice_intent", payload.voiceIntent);
       pushIfPresent(facts, "promised_date", payload.promisedDate);
+      // promise tracker (direction 07) fields
+      pushIfPresent(facts, "promise_id", payload.promiseId);
+      pushIfPresent(facts, "promised_amount_minor", payload.promisedMinor ?? payload.amountMinor);
+      pushIfPresent(facts, "promised_date", payload.promiseDate ?? payload.promisedDate);
+      pushIfPresent(facts, "promise_type", payload.promiseType);
+      pushIfPresent(facts, "promise_status", payload.promiseStatus);
+      pushIfPresent(facts, "promise_source", payload.source);
+      pushIfPresent(facts, "fulfilled_amount_minor", payload.fulfilledAmountMinor);
+      pushIfPresent(facts, "customer_reliability_score", payload.customerReliabilityScore);
     }
 
     await auditService.record({

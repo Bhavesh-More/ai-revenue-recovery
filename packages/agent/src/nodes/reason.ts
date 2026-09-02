@@ -9,6 +9,7 @@ import { reasonOverSubscriptionRecoveryFacts } from "../directions/failed-subscr
 import { reasonOverB2BReceivablesFacts } from "../directions/b2b-receivables/analyzer.js";
 import { reasonOverMandateRetryFacts } from "../directions/mandate-retry/analyzer.js";
 import { reasonOverHinglishVoiceFacts } from "../directions/hinglish-voice/analyzer.js";
+import { reasonOverPromiseTrackerFacts } from "../directions/promise-tracker/analyzer.js";
 import type { AgentStateType } from "../state.js";
 import type { Reasoner } from "../reasoner.js";
 import type { DecisionService, AgentDecisionType } from "../decision-service.js";
@@ -224,6 +225,41 @@ export function reasonNode(deps: ReasonDeps) {
             revenueAtRiskMinor: analysis.revenueAtRiskMinor,
           },
           actor: "agent:direction06",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "07_promise_to_pay") {
+      const analysis = reasonOverPromiseTrackerFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 07 classified promise as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction07",
         });
 
         return {
