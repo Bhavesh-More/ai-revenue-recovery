@@ -110,6 +110,13 @@ export const mandateFailedSchema = baseFields.extend({
   mandateId: z.string().min(1),
   mandateState: mandateState.optional(),
   failureReason: failureReasonCode.optional(),
+  paymentId: z.string().optional(),
+  bank: z.string().optional(),
+  provider: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  consecutiveFailures: z.number().int().nonnegative().optional(),
+  successfulDebitsCount: z.number().int().nonnegative().optional(),
+  bankDegradationHint: z.number().min(0).max(1).optional(),
 });
 
 export const customerRespondedSchema = z.object({

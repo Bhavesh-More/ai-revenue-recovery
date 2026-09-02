@@ -7,6 +7,7 @@ import { reasonOverPaymentDegradationFacts } from "../directions/payment-degrada
 import { reasonOverCheckoutDropoffFacts } from "../directions/checkout-dropoff/analyzer.js";
 import { reasonOverSubscriptionRecoveryFacts } from "../directions/failed-subscription/analyzer.js";
 import { reasonOverB2BReceivablesFacts } from "../directions/b2b-receivables/analyzer.js";
+import { reasonOverMandateRetryFacts } from "../directions/mandate-retry/analyzer.js";
 import type { AgentStateType } from "../state.js";
 import type { Reasoner } from "../reasoner.js";
 import type { DecisionService, AgentDecisionType } from "../decision-service.js";
@@ -152,6 +153,41 @@ export function reasonNode(deps: ReasonDeps) {
             revenueAtRiskMinor: analysis.revenueAtRiskMinor,
           },
           actor: "agent:direction04",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "05_mandate_retry") {
+      const analysis = reasonOverMandateRetryFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 05 classified mandate failure as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction05",
         });
 
         return {

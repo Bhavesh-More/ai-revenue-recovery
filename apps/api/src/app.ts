@@ -19,6 +19,7 @@ import { paymentRecoveryRouter } from "./routes/payment-recovery.js";
 import { checkoutRecoveryRouter } from "./routes/checkout-recovery.js";
 import { subscriptionRecoveryRouter } from "./routes/subscription-recovery.js";
 import { receivablesRecoveryRouter } from "./routes/receivables-recovery.js";
+import { mandateRecoveryRouter } from "./routes/mandate-recovery.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -78,6 +79,7 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(`/api/${config.version}`, subscriptionRecoveryRouter);
   app.use(subscriptionRecoveryRouter);
   app.use(`/api/${config.version}`, receivablesRecoveryRouter);
+  app.use(`/api/${config.version}`, mandateRecoveryRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -164,6 +164,12 @@ export function loadContextNode(deps: LoadContextDeps) {
         "broken_promises_count",
         payload.brokenPromisesCount,
       );
+      // mandate retry fields
+      pushIfPresent(facts, "mandate_id", payload.mandateId);
+      pushIfPresent(facts, "mandate_state", payload.mandateState);
+      pushIfPresent(facts, "consecutive_failures", payload.consecutiveFailures);
+      pushIfPresent(facts, "successful_debits_count", payload.successfulDebitsCount);
+      pushIfPresent(facts, "bank_degradation_hint", payload.bankDegradationHint);
     }
 
     await auditService.record({
