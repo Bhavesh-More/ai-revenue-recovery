@@ -30,13 +30,13 @@ export function Sidebar({
   batchesHref = '/batches',
   ingestionHref,
   approvalsHref = '/approvals',
-  paymentDegradationHref = '#',
-  checkoutRecoveryHref = '#',
-  subscriptionRecoveryHref = '#',
-  b2bReceivablesHref = '#',
-  mandateRetryHref = '#',
-  hinglishVoiceHref = '#',
-  promiseToPayHref = '#',
+  paymentDegradationHref = '/directions/payment-degradation',
+  checkoutRecoveryHref = '/directions/checkout-dropoff',
+  subscriptionRecoveryHref = '/directions/subscription-recovery',
+  b2bReceivablesHref = '/directions/b2b-receivables',
+  mandateRetryHref = '/directions/mandate-retry',
+  hinglishVoiceHref = '/directions/hinglish-voice',
+  promiseToPayHref = '/directions/promise-to-pay',
   policiesHref = '/policies',
   auditLogHref = '/audit-log',
   batchesCount = 2,
@@ -127,34 +127,34 @@ export function Sidebar({
           Directions
         </p>
         <nav className="space-y-1">
-          <a href={paymentDegradationHref} className={navClass('payment')}>
+          <Link href={paymentDegradationHref} className={navClass('payment')}>
             <Icon icon="lucide:credit-card" className="text-lg" />
             <span className="text-sm font-medium">Payment Degradation</span>
-          </a>
-          <a href={checkoutRecoveryHref} className={navClass('checkout')}>
+          </Link>
+          <Link href={checkoutRecoveryHref} className={navClass('checkout')}>
             <Icon icon="lucide:shopping-cart" className="text-lg" />
             <span className="text-sm font-medium">Checkout Recovery</span>
-          </a>
-          <a href={subscriptionRecoveryHref} className={navClass('subscription')}>
+          </Link>
+          <Link href={subscriptionRecoveryHref} className={navClass('subscription')}>
             <Icon icon="lucide:repeat" className="text-lg" />
             <span className="text-sm font-medium">Subscription Recovery</span>
-          </a>
-          <a href={b2bReceivablesHref} className={navClass('b2b')}>
+          </Link>
+          <Link href={b2bReceivablesHref} className={navClass('b2b')}>
             <Icon icon="lucide:building" className="text-lg" />
             <span className="text-sm font-medium">B2B Receivables</span>
-          </a>
-          <a href={mandateRetryHref} className={navClass('mandate')}>
+          </Link>
+          <Link href={mandateRetryHref} className={navClass('mandate')}>
             <Icon icon="lucide:refresh-cw" className="text-lg" />
             <span className="text-sm font-medium">Mandate Retry</span>
-          </a>
-          <a href={hinglishVoiceHref} className={navClass('voice')}>
+          </Link>
+          <Link href={hinglishVoiceHref} className={navClass('voice')}>
             <Icon icon="lucide:mic" className="text-lg" />
             <span className="text-sm font-medium">Hinglish Voice</span>
-          </a>
-          <a href={promiseToPayHref} className={navClass('promise')}>
+          </Link>
+          <Link href={promiseToPayHref} className={navClass('promise')}>
             <Icon icon="lucide:calendar-clock" className="text-lg" />
             <span className="text-sm font-medium">Promise-to-Pay</span>
-          </a>
+          </Link>
         </nav>
       </div>
 

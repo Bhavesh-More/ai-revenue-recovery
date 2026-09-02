@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import {
   FullPolicyConfig,
@@ -14,13 +14,25 @@ import { GlobalRecoveryLimits } from './GlobalRecoveryLimits';
 import { EscalationRules } from './EscalationRules';
 import { DirectionPolicyCard } from './DirectionPolicyCard';
 import { DirectionPolicyEditor } from './DirectionPolicyEditor';
+import { fetchPolicies } from '../../lib/api';
 
 export function PoliciesPage() {
-  const [savedConfig, setSavedConfig] = useState<FullPolicyConfig>(INITIAL_POLICIES_DATA);
-  const [draftConfig, setDraftConfig] = useState<FullPolicyConfig>(INITIAL_POLICIES_DATA);
+  const [config, setConfig] = useState<FullPolicyConfig>(INITIAL_POLICIES_DATA);
   const [editingDirection, setEditingDirection] = useState<DirectionPolicyOverride | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    fetchPolicies()
+      .then((apiPolicies) => {
+        if (Array.isArray(apiPolicies) && apiPolicies.length > 0) {
+          setIsLive(true);
+        }
+      })
+      .catch(() => {
+        setIsLive(false);
+      });
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToast({ message, type });
@@ -29,234 +41,125 @@ export function PoliciesPage() {
     }, 4000);
   };
 
-  // Change detection
-  const isDirty = useMemo(() => {
-    return JSON.stringify(savedConfig) !== JSON.stringify(draftConfig);
-  }, [savedConfig, draftConfig]);
-
-  // Validation
-  const errors = useMemo(() => {
-    const errs: {
-      maxAutomaticRetries?: string;
-      maxCommunications?: string;
-      highValueThreshold?: string;
-      criticalRiskThreshold?: string;
-    } = {};
-
-    if (draftConfig.globalLimits.maxAutomaticRetries.value < 1) {
-      errs.maxAutomaticRetries = 'Must be at least 1 retry';
-    }
-    if (draftConfig.globalLimits.maxCommunications.value < 1) {
-      errs.maxCommunications = 'Must be at least 1 communication';
-    }
-    if (draftConfig.escalationRules.highValueThreshold.value <= 0) {
-      errs.highValueThreshold = 'Amount must be greater than 0';
-    }
-    if (
-      draftConfig.escalationRules.criticalRiskThreshold.value < 0 ||
-      draftConfig.escalationRules.criticalRiskThreshold.value > 100
-    ) {
-      errs.criticalRiskThreshold = 'Must be between 0% and 100%';
-    }
-
-    return errs;
-  }, [draftConfig]);
-
-  const hasErrors = Object.keys(errors).length > 0;
-
-  // Handlers for Global Limits & Escalation Rules
-  const handleGlobalLimitsChange = (limits: GlobalPolicyLimits) => {
-    setDraftConfig((prev) => ({
+  const handleGlobalChange = (newLimits: GlobalPolicyLimits) => {
+    setConfig((prev) => ({
       ...prev,
-      globalLimits: limits,
+      globalLimits: newLimits,
     }));
   };
 
-  const handleEscalationRulesChange = (rules: EscalationRulesType) => {
-    setDraftConfig((prev) => ({
+  const handleEscalationChange = (newRules: EscalationRulesType) => {
+    setConfig((prev) => ({
       ...prev,
-      escalationRules: rules,
+      escalationRules: newRules,
     }));
   };
 
-  // Handlers for Direction Overrides
-  const handleToggleDirection = (id: string, enabled: boolean) => {
-    setDraftConfig((prev) => ({
+  const handleSaveDirectionOverride = (updated: DirectionPolicyOverride) => {
+    setConfig((prev) => ({
       ...prev,
-      directionOverrides: prev.directionOverrides.map((d) =>
-        d.id === id ? { ...d, enabled } : d
-      ),
+      directionOverrides: prev.directionOverrides.map((d) => (d.id === updated.id ? updated : d)),
     }));
-  };
-
-  const handleSaveDirection = (updatedDir: DirectionPolicyOverride) => {
-    setDraftConfig((prev) => ({
-      ...prev,
-      directionOverrides: prev.directionOverrides.map((d) =>
-        d.id === updatedDir.id ? updatedDir : d
-      ),
-    }));
-    showToast(`Override settings updated for ${updatedDir.name}.`, 'info');
-  };
-
-  // Discard changes
-  const handleDiscard = () => {
-    setDraftConfig(savedConfig);
-    showToast('Unsaved changes discarded.', 'info');
-  };
-
-  // Save configuration
-  const handleSave = () => {
-    if (hasErrors || !isDirty || isSaving) return;
-
-    setIsSaving(true);
-
-    setTimeout(() => {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const lastUpdatedStr = `Today, ${timeStr}`;
-
-      const updatedSaved: FullPolicyConfig = {
-        ...draftConfig,
-        metadata: {
-          ...draftConfig.metadata,
-          lastUpdated: lastUpdatedStr,
-        },
-      };
-
-      setSavedConfig(updatedSaved);
-      setDraftConfig(updatedSaved);
-      setIsSaving(false);
-      showToast('Policy configuration saved and active across recovery cases.', 'success');
-    }, 400);
+    setEditingDirection(null);
+    showToast(`Updated overrides for ${updated.name}`, 'info');
   };
 
   return (
-    <div className="p-6 lg:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full font-mono transition-colors">
-      {/* Feedback Toast Notification */}
+    <div className="p-6 lg:p-8 flex flex-col gap-6 font-mono pb-24">
+      {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-20 right-8 z-50 px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 transition-all animate-in fade-in slide-in-from-top-2 ${
+          className={`fixed top-20 right-8 z-50 px-4 py-3 rounded-lg shadow-xl border flex items-center gap-3 animate-bounce ${
             toast.type === 'success'
-              ? 'bg-[#00B074] text-white border-[#00B074]'
-              : toast.type === 'error'
-              ? 'bg-[#FF4444] text-white border-[#FF4444]'
-              : 'bg-[#1A1A1A] dark:bg-white text-white dark:text-[#131416] border-[#2A2B2D]'
+              ? 'bg-[#1A1A1A] dark:bg-[#F9FAFB] text-white dark:text-[#1A1A1A] border-neutral-700 dark:border-neutral-200'
+              : toast.type === 'info'
+              ? 'bg-[#3B82F6] text-white border-[#3B82F6]'
+              : 'bg-[#FF4444] text-white border-[#FF4444]'
           }`}
         >
           <Icon
             icon={
               toast.type === 'success'
                 ? 'lucide:check-circle-2'
-                : toast.type === 'error'
-                ? 'lucide:alert-circle'
-                : 'lucide:info'
+                : toast.type === 'info'
+                ? 'lucide:info'
+                : 'lucide:alert-circle'
             }
-            className="text-lg shrink-0"
+            className="text-lg"
           />
-          <span className="text-xs font-bold">{toast.message}</span>
+          <span className="text-sm font-semibold">{toast.message}</span>
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+      {/* Header */}
+      <div className="flex flex-wrap gap-4 justify-between items-end">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Icon icon="lucide:shield" className="text-[#3B82F6] text-2xl shrink-0" />
-            <h2 className="text-xl sm:text-2xl font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-              Policies &amp; Configuration
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-2xl font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+              Policy Engine Configuration
             </h2>
+            <span
+              className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                isLive
+                  ? 'bg-[#00B074]/10 text-[#00B074] border-[#00B074]/20'
+                  : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20'
+              }`}
+            >
+              {isLive ? 'Live Policy Engine' : 'Sandbox Demo Baseline'}
+            </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#4A4A4A] dark:text-[#9CA3AF]">
-            Manage global recovery rules, escalation thresholds, and direction-specific behaviors.
+          <p className="text-sm text-[#4A4A4A] dark:text-[#9CA3AF]">
+            Configure autonomous guardrails, retry limits, and human escalation thresholds.
+          </p>
+        </div>
+      </div>
+
+      <PolicyStatusBar metadata={config.metadata} />
+
+      <GlobalRecoveryLimits
+        limits={config.globalLimits}
+        onChange={handleGlobalChange}
+      />
+
+      <div className="flex flex-col gap-4">
+        <div>
+          <h3 className="text-base font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+            Direction Policy Overrides
+          </h3>
+          <p className="text-xs text-[#8C8C8C] dark:text-[#6B7280]">
+            Customize execution limits specifically for individual recovery strategies.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-          {/* Discard button */}
-          <button
-            type="button"
-            disabled={!isDirty || isSaving}
-            onClick={handleDiscard}
-            className="px-4 py-2 bg-white dark:bg-[#171819] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-lg text-xs sm:text-sm font-medium text-[#1A1A1A] dark:text-[#F9FAFB] hover:bg-[#F0F2F5] dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
-          >
-            Discard Changes
-          </button>
-
-          {/* Save button */}
-          <button
-            type="button"
-            disabled={!isDirty || hasErrors || isSaving}
-            onClick={handleSave}
-            className="px-4 py-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] rounded-lg text-xs sm:text-sm font-bold hover:bg-black dark:hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
-          >
-            {isSaving ? (
-              <>
-                <Icon icon="lucide:loader-2" className="text-base animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Icon icon="lucide:save" className="text-base" />
-                <span>Save Configuration</span>
-              </>
-            )}
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {config.directionOverrides.map((direction) => (
+            <DirectionPolicyCard
+              key={direction.id}
+              direction={direction}
+              onToggle={(enabled) => {
+                setConfig((prev) => ({
+                  ...prev,
+                  directionOverrides: prev.directionOverrides.map((d) =>
+                    d.id === direction.id ? { ...d, enabled } : d,
+                  ),
+                }));
+              }}
+              onEdit={() => setEditingDirection(direction)}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Policy Status Bar */}
-      <PolicyStatusBar metadata={draftConfig.metadata} />
+      <EscalationRules
+        rules={config.escalationRules}
+        onChange={handleEscalationChange}
+      />
 
-      {/* Global Settings Grid (Global Recovery Limits + Escalation Rules) */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
-        <GlobalRecoveryLimits
-          limits={draftConfig.globalLimits}
-          onChange={handleGlobalLimitsChange}
-          errors={{
-            maxAutomaticRetries: errors.maxAutomaticRetries,
-            maxCommunications: errors.maxCommunications,
-          }}
-        />
-
-        <EscalationRules
-          rules={draftConfig.escalationRules}
-          onChange={handleEscalationRulesChange}
-          errors={{
-            highValueThreshold: errors.highValueThreshold,
-            criticalRiskThreshold: errors.criticalRiskThreshold,
-          }}
-        />
-      </div>
-
-      {/* Section Divider */}
-      <div className="pt-2 pb-1 border-b border-[#E5E7EB] dark:border-[#2A2B2D]">
-        <h3 className="text-sm font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-          Direction-Specific Policy Overrides
-        </h3>
-        <p className="text-xs text-[#4A4A4A] dark:text-[#9CA3AF] mt-0.5">
-          Configure specific rules that override global settings for individual recovery workflows.
-        </p>
-      </div>
-
-      {/* Direction Policies Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {draftConfig.directionOverrides.map((direction) => (
-          <DirectionPolicyCard
-            key={direction.id}
-            direction={direction}
-            onToggle={(enabled) => handleToggleDirection(direction.id, enabled)}
-            onEdit={() => setEditingDirection(direction)}
-          />
-        ))}
-      </div>
-
-      {/* Modal Editor for Direction Override */}
       <DirectionPolicyEditor
         isOpen={Boolean(editingDirection)}
         direction={editingDirection}
         onClose={() => setEditingDirection(null)}
-        onSave={handleSaveDirection}
+        onSave={handleSaveDirectionOverride}
       />
     </div>
   );
