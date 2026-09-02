@@ -1,9 +1,5 @@
 import { eq, desc } from "drizzle-orm";
-import {
-  customers,
-  recoveryActions,
-  revenueEvents,
-} from "@recovery/db/schema";
+import { customers, recoveryActions, revenueEvents } from "@recovery/db/schema";
 import { auditService } from "@recovery/audit";
 import { caseLifecycle } from "@recovery/case-lifecycle";
 import { policyService } from "@recovery/policy";
@@ -13,11 +9,7 @@ export interface LoadContextDeps {
   db: any;
 }
 
-function pushIfPresent(
-  facts: string[],
-  key: string,
-  value: unknown,
-): void {
+function pushIfPresent(facts: string[], key: string, value: unknown): void {
   if (value === undefined || value === null || value === "") return;
   facts.push(`${key}=${String(value)}`);
 }
@@ -70,7 +62,11 @@ export function loadContextNode(deps: LoadContextDeps) {
 
     const history = payloadRecord(custRow?.history);
     const risk = payloadRecord(custRow?.risk);
-    pushIfPresent(facts, "customer_successful_payments", history.successfulPayments);
+    pushIfPresent(
+      facts,
+      "customer_successful_payments",
+      history.successfulPayments,
+    );
     pushIfPresent(facts, "customer_failed_payments", history.failedPayments);
     pushIfPresent(facts, "customer_tenure_months", history.tenureMonths);
     pushIfPresent(facts, "recovery_probability_hint", risk.recoveryProbability);
@@ -89,29 +85,85 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "bank", payload.bank);
       pushIfPresent(facts, "region", payload.region);
       pushIfPresent(facts, "attempt_count", payload.attemptCount);
-      pushIfPresent(facts, "baseline_success_rate", payload.baselineSuccessRate);
+      pushIfPresent(
+        facts,
+        "baseline_success_rate",
+        payload.baselineSuccessRate,
+      );
       pushIfPresent(facts, "current_success_rate", payload.currentSuccessRate);
-      pushIfPresent(facts, "similar_failure_count", payload.similarFailureCount);
-      pushIfPresent(facts, "affected_customer_count", payload.affectedCustomerCount);
+      pushIfPresent(
+        facts,
+        "similar_failure_count",
+        payload.similarFailureCount,
+      );
+      pushIfPresent(
+        facts,
+        "affected_customer_count",
+        payload.affectedCustomerCount,
+      );
       pushIfPresent(facts, "time_window_minutes", payload.timeWindowMinutes);
       // checkout drop-off fields
       pushIfPresent(facts, "last_seen_page", payload.lastStep);
-      pushIfPresent(facts, "abandonment_duration_minutes", payload.abandonmentDurationMinutes);
+      pushIfPresent(
+        facts,
+        "abandonment_duration_minutes",
+        payload.abandonmentDurationMinutes,
+      );
       pushIfPresent(facts, "cart_value_minor", payload.cartValueMinor);
       pushIfPresent(facts, "shipping_cost_minor", payload.shippingCostMinor);
-      pushIfPresent(facts, "technical_errors_count", payload.technicalErrorsCount);
+      pushIfPresent(
+        facts,
+        "technical_errors_count",
+        payload.technicalErrorsCount,
+      );
       pushIfPresent(facts, "intent_score", payload.intentScore);
-      pushIfPresent(facts, "previous_abandoned_count", payload.previousAbandonedCount);
+      pushIfPresent(
+        facts,
+        "previous_abandoned_count",
+        payload.previousAbandonedCount,
+      );
       // failed subscription fields
       pushIfPresent(facts, "subscription_id", payload.subscriptionId);
       pushIfPresent(facts, "plan_id", payload.planId);
       pushIfPresent(facts, "billing_cycle", payload.billingCycle);
       pushIfPresent(facts, "tenure_months", payload.tenureMonths);
-      pushIfPresent(facts, "previous_successful_renewals", payload.previousSuccessfulRenewals);
+      pushIfPresent(
+        facts,
+        "previous_successful_renewals",
+        payload.previousSuccessfulRenewals,
+      );
       pushIfPresent(facts, "failed_renewal_count", payload.failedRenewalCount);
-      pushIfPresent(facts, "grace_period_days_remaining", payload.gracePeriodDaysRemaining);
+      pushIfPresent(
+        facts,
+        "grace_period_days_remaining",
+        payload.gracePeriodDaysRemaining,
+      );
       pushIfPresent(facts, "mrr_minor", payload.mrrMinor);
       pushIfPresent(facts, "estimated_ltv_minor", payload.estimatedLtvMinor);
+      // B2B receivables fields
+      pushIfPresent(facts, "invoice_id", payload.invoiceId);
+      pushIfPresent(facts, "invoice_number", payload.invoiceNumber);
+      pushIfPresent(facts, "days_overdue", payload.daysOverdue);
+      pushIfPresent(facts, "due_date", payload.dueDate);
+      pushIfPresent(facts, "payment_terms", payload.paymentTerms);
+      pushIfPresent(facts, "company_name", payload.companyName);
+      pushIfPresent(facts, "contact_email", payload.contactEmail);
+      pushIfPresent(
+        facts,
+        "purchase_order_number",
+        payload.purchaseOrderNumber,
+      );
+      pushIfPresent(facts, "dispute_status", payload.disputeStatus);
+      pushIfPresent(
+        facts,
+        "historical_avg_delay_days",
+        payload.historicalAvgDelayDays,
+      );
+      pushIfPresent(
+        facts,
+        "broken_promises_count",
+        payload.brokenPromisesCount,
+      );
     }
 
     await auditService.record({

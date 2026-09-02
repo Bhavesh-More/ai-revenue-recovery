@@ -93,6 +93,16 @@ export const invoiceOverdueSchema = baseFields.extend({
   type: z.literal("invoice.overdue"),
   invoiceId: z.string().min(1),
   daysOverdue: z.number().int().nonnegative(),
+  invoiceNumber: z.string().optional(),
+  dueDate: z.string().optional(),
+  paymentTerms: z.string().optional(),
+  companyName: z.string().optional(),
+  contactEmail: z.email().optional(),
+  contactPhone: z.string().optional(),
+  purchaseOrderNumber: z.string().optional(),
+  disputeStatus: z.enum(["none", "active", "resolved"]).optional(),
+  historicalAvgDelayDays: z.number().int().nonnegative().optional(),
+  brokenPromisesCount: z.number().int().nonnegative().optional(),
 });
 
 export const mandateFailedSchema = baseFields.extend({
