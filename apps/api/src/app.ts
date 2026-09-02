@@ -23,6 +23,9 @@ import { mandateRecoveryRouter } from "./routes/mandate-recovery.js";
 import { voiceRecoveryRouter } from "./routes/voice-recovery.js";
 import { promisesRouter } from "./routes/promises.js";
 import { webhooksRazorpayRouter } from "./routes/webhooks-razorpay.js";
+import { streamRouter } from "./routes/stream.js";
+import { jobsRouter } from "./routes/jobs.js";
+import { observabilityRouter } from "./routes/observability.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -91,6 +94,12 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(promisesRouter);
   app.use(`/api/${config.version}`, webhooksRazorpayRouter);
   app.use(webhooksRazorpayRouter);
+  app.use(`/api/${config.version}`, streamRouter);
+  app.use(streamRouter);
+  app.use(`/api/${config.version}`, jobsRouter);
+  app.use(jobsRouter);
+  app.use(`/api/${config.version}`, observabilityRouter);
+  app.use(observabilityRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

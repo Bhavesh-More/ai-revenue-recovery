@@ -11,6 +11,7 @@ import { CaseNotFoundError } from "@recovery/case-lifecycle";
 import { caseLifecycle } from "@recovery/case-lifecycle";
 import { registerDefaultAgentTools } from "./tools/register-default-tools.js";
 import { TRACING_CONFIG, tracingMetadata, tracingTags } from "./tracing.js";
+import { agentJobTracker } from "./job-tracker.js";
 
 registerDefaultAgentTools();
 
@@ -86,8 +87,14 @@ export class AgentRunner {
     }
 
     const runId = randomUUID();
+    agentJobTracker.createJob(runId, input.caseId, "RECOVERY_ANALYSIS");
+    agentJobTracker.addJobEvent(runId, "LOAD_CONTEXT", `Loading customer & payment context for case ${input.caseId}`);
 
     const state = await this.buildAndInvoke(input.caseId, runId);
+
+    agentJobTracker.addJobEvent(runId, "POLICY_CHECK", `Checked recovery policy rules and stopping criteria`);
+    agentJobTracker.addJobEvent(runId, "AI_REASONING", `AI agent reasoned next recovery action (Phase: ${state.phase})`);
+    agentJobTracker.updateJobStatus(runId, "SUCCEEDED", 100);
 
     const decision = await this._decisionService.findByRunId(runId);
 

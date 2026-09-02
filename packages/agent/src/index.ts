@@ -11,3 +11,4 @@ export * from "./tracing.js";
 export * from "./decision-service.js";
 export * from "./graph.js";
 export * from "./runner.js";
+export * from "./job-tracker.js";

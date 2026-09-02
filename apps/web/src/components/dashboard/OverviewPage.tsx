@@ -7,6 +7,7 @@ import { RecoveryByDirection } from './RecoveryByDirection';
 import { RecoveryFunnel } from './RecoveryFunnel';
 import { OverviewData, mockOverviewData } from '../../mocks/overview';
 import { fetchOverviewStats, formatCurrencyMinor } from '../../lib/api';
+import { useRealtimeStream } from '../../hooks/useRealtimeStream';
 
 export interface OverviewPageProps {
   data?: OverviewData;
@@ -16,7 +17,7 @@ export function OverviewPage({ data: propData }: OverviewPageProps) {
   const [stats, setStats] = useState<OverviewData>(propData || mockOverviewData);
   const [isLive, setIsLive] = useState(false);
 
-  useEffect(() => {
+  const loadStats = () => {
     fetchOverviewStats()
       .then((res) => {
         setStats({
@@ -33,6 +34,16 @@ export function OverviewPage({ data: propData }: OverviewPageProps) {
       .catch(() => {
         setIsLive(false);
       });
+  };
+
+  const { status: sseStatus } = useRealtimeStream((event) => {
+    if (event.type === 'case.created' || event.type === 'case.updated' || event.type === 'webhook.event') {
+      loadStats();
+    }
+  });
+
+  useEffect(() => {
+    loadStats();
   }, []);
 
   return (
@@ -49,9 +60,16 @@ export function OverviewPage({ data: propData }: OverviewPageProps) {
             {isLive ? 'Live API Backend Connected' : 'Local Sandbox Mode (Mock Baseline Active)'}
           </span>
         </div>
-        <span className="text-[#8C8C8C] dark:text-[#6B7280]">
-          {isLive ? 'GET /api/v1/cases/stats' : 'Connecting to localhost:3000...'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold ${
+            sseStatus === 'connected' ? 'bg-[#00B074]/10 text-[#00B074] border border-[#00B074]/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+          }`}>
+            SSE Stream: {sseStatus}
+          </span>
+          <span className="text-[#8C8C8C] dark:text-[#6B7280]">
+            {isLive ? 'GET /api/v1/cases/stats' : 'Connecting to localhost:3000...'}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

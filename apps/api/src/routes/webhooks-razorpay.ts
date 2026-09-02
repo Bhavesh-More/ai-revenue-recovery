@@ -6,6 +6,7 @@ import { auditService } from "@recovery/audit";
 import { ApiError } from "../lib/errors.js";
 import { ok } from "../lib/responses.js";
 import { asyncHandler } from "../lib/async-handler.js";
+import { eventBroadcaster } from "../lib/broadcaster.js";
 
 export const webhooksRazorpayRouter = Router();
 
@@ -159,7 +160,10 @@ webhooksRazorpayRouter.post(
           subscriptionId: subEntity?.id || null,
         },
       });
+      eventBroadcaster.broadcast("case.updated", { caseId: caseIdHandled, event: eventType });
     }
+
+    eventBroadcaster.broadcast("webhook.event", { event: eventType, caseId: caseIdHandled || null });
 
     ok(res, {
       received: true,

@@ -11,6 +11,7 @@ import { asyncHandler } from "../lib/async-handler.js";
 import { created, ok, collection } from "../lib/responses.js";
 import { razorpayClient } from "@recovery/integrations";
 import { auditService } from "@recovery/audit";
+import { eventBroadcaster } from "../lib/broadcaster.js";
 
 const recoveryDirection = z.enum([
   "01_payment_degradation",
@@ -203,6 +204,7 @@ casesRouter.post(
         actor: input.actor,
         decisionId: input.decisionId,
       });
+      eventBroadcaster.broadcast("case.updated", row);
       ok(res, row);
     } catch (err) {
       mapDomainError(err);

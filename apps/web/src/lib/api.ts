@@ -194,6 +194,18 @@ export async function retryCasePayment(caseId: string): Promise<{ paymentId: str
   });
 }
 
+export async function fetchAgentJob(jobId: string): Promise<{ id: string; status: string; progress: number; startedAt: string; completedAt: string | null }> {
+  return fetchJson<{ id: string; status: string; progress: number; startedAt: string; completedAt: string | null }>(`/jobs/${jobId}`);
+}
+
+export async function fetchAgentJobEvents(jobId: string): Promise<Array<{ jobId: string; type: string; message: string; createdAt: string }>> {
+  return fetchJson<Array<{ jobId: string; type: string; message: string; createdAt: string }>>(`/jobs/${jobId}/events`);
+}
+
+export async function fetchObservabilityStatus(): Promise<{ tracingEnabled: boolean; project: string; environment: string; endpoint: string; status: string }> {
+  return fetchJson<{ tracingEnabled: boolean; project: string; environment: string; endpoint: string; status: string }>('/observability/status');
+}
+
 export function formatCurrencyMinor(minor: number, currency: string = 'INR'): string {
   const rupees = Math.round(minor / 100);
   if (rupees >= 10000000) {

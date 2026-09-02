@@ -7,6 +7,7 @@ import { RecoveryCasesTable, SortField, SortDirection } from './RecoveryCasesTab
 import { RecoveryCasesPagination } from './RecoveryCasesPagination';
 import { mockRecoveryCases, RecoveryCase, RecoveryCaseStatus, RecoveryCaseRisk } from '../../mocks/recoveryCases';
 import { fetchRecoveryCases } from '../../lib/api';
+import { useRealtimeStream } from '../../hooks/useRealtimeStream';
 
 export interface RecoveryCasesPageProps {
   initialCases?: RecoveryCase[];
@@ -46,7 +47,7 @@ export function RecoveryCasesPage({ initialCases = mockRecoveryCases }: Recovery
   const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
+  const loadCases = () => {
     fetchRecoveryCases({ limit: 100 })
       .then((apiCases) => {
         if (Array.isArray(apiCases) && apiCases.length > 0) {
@@ -91,6 +92,16 @@ export function RecoveryCasesPage({ initialCases = mockRecoveryCases }: Recovery
       .catch(() => {
         setIsLive(false);
       });
+  };
+
+  useRealtimeStream((event) => {
+    if (event.type === 'case.created' || event.type === 'case.updated' || event.type === 'webhook.event') {
+      loadCases();
+    }
+  });
+
+  useEffect(() => {
+    loadCases();
   }, []);
 
   const handleSort = (field: SortField) => {
