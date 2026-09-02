@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "turbo dev",
     "server": "turbo run server --filter=@recovery/api",
+    "tunnel": "ngrok http 3000",
+    "tunnel:api": "yarn workspace @recovery/api tunnel",
     "worker": "turbo run dev --filter=@recovery/worker",
     "build": "turbo build",
     "lint": "turbo lint",

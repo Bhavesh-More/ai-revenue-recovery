@@ -7,6 +7,7 @@
     "server": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "tunnel": "ngrok http 3000",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo"
@@ -17,6 +18,7 @@
     "@recovery/case-lifecycle": "workspace:*",
     "@recovery/config": "workspace:*",
     "@recovery/event-ingestion": "workspace:*",
+    "@recovery/integrations": "workspace:*",
     "@recovery/policy": "workspace:*",
     "@recovery/queue": "workspace:*",
     "@recovery/validation": "workspace:*",

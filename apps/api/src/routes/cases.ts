@@ -118,6 +118,48 @@ casesRouter.post(
 );
 
 casesRouter.get(
+  "/cases/stats",
+  asyncHandler(async (_req, res) => {
+    const allCases = await caseLifecycle.list({ limit: 1000, offset: 0 });
+    let totalRiskMinor = 0;
+    let totalRecoveredMinor = 0;
+    let activeCases = 0;
+    let highRiskCases = 0;
+    const directionCounts: Record<string, number> = {};
+
+    for (const c of allCases) {
+      if (
+        c.currentState !== "recovered" &&
+        c.currentState !== "stopped" &&
+        c.currentState !== "failed"
+      ) {
+        totalRiskMinor += Number(c.amountAtRiskMinor ?? 0);
+        activeCases++;
+        if (c.riskTier === "high" || c.riskTier === "critical") {
+          highRiskCases++;
+        }
+        directionCounts[c.direction] = (directionCounts[c.direction] ?? 0) + 1;
+      }
+      totalRecoveredMinor += Number(c.outcomeRecoveredMinor ?? 0);
+    }
+
+    const totalCalculated = totalRiskMinor + totalRecoveredMinor;
+    const rate =
+      totalCalculated > 0 ? (totalRecoveredMinor / totalCalculated) * 100 : 0;
+
+    ok(res, {
+      revenueAtRiskMinor: totalRiskMinor,
+      revenueRecoveredMinor: totalRecoveredMinor,
+      recoveryRate: Number(rate.toFixed(1)),
+      activeCases,
+      highRiskCases,
+      directionCounts,
+      totalCasesCount: allCases.length,
+    });
+  }),
+);
+
+casesRouter.get(
   "/cases/:id",
   asyncHandler(async (req, res) => {
     const id = String(req.params.id);

@@ -22,6 +22,7 @@ import { receivablesRecoveryRouter } from "./routes/receivables-recovery.js";
 import { mandateRecoveryRouter } from "./routes/mandate-recovery.js";
 import { voiceRecoveryRouter } from "./routes/voice-recovery.js";
 import { promisesRouter } from "./routes/promises.js";
+import { webhooksRazorpayRouter } from "./routes/webhooks-razorpay.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -88,6 +89,8 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(voiceRecoveryRouter);
   app.use(`/api/${config.version}`, promisesRouter);
   app.use(promisesRouter);
+  app.use(`/api/${config.version}`, webhooksRazorpayRouter);
+  app.use(webhooksRazorpayRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
