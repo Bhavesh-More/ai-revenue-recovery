@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - recovery-network
 
   redis:
     image: redis:7-alpine
@@ -30,7 +32,84 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - recovery-network
+
+  api:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: recovery-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      API_PORT: 4000
+      API_HOST: 0.0.0.0
+      DATABASE_URL: postgresql://recovery:recovery@postgres:5432/recovery_dev
+      REDIS_URL: redis://redis:6379
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-https://ollama.com/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gpt-oss:120b}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - recovery-network
+
+  worker:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: recovery-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://recovery:recovery@postgres:5432/recovery_dev
+      REDIS_URL: redis://redis:6379
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-https://ollama.com/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gpt-oss:120b}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - recovery-network
+
+  web:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: recovery-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - recovery-network
 
 volumes:
   recovery-postgres-data:
   recovery-redis-data:
+
+networks:
+  recovery-network:
+    driver: bridge

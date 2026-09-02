@@ -19,6 +19,17 @@ webhooksRazorpayRouter.post(
         ? req.body
         : JSON.stringify(req.body || {});
 
+    // Timestamp drift protection (rejects replayed webhooks > 300 seconds old)
+    const timestampHeader = req.headers["x-razorpay-event-timestamp"] as string | undefined;
+    if (timestampHeader) {
+      const eventTimeMs = parseInt(timestampHeader, 10) * (timestampHeader.length === 10 ? 1000 : 1);
+      const currentTimeMs = Date.now();
+      const driftSeconds = Math.abs(currentTimeMs - eventTimeMs) / 1000;
+      if (driftSeconds > 300) {
+        throw ApiError.badRequest("WEBHOOK_EXPIRED", "Razorpay webhook timestamp skew exceeds 300 seconds (replay attack protection).");
+      }
+    }
+
     // Signature verification (skips check in sandbox mock mode if secret is unset)
     if (!razorpayClient.isMockMode() && signature) {
       const isValid = razorpayClient.verifyWebhookSignature(rawBody, signature);

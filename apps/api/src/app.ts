@@ -8,6 +8,7 @@ import { requestId } from "./lib/request-id.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { clerkAuthMiddleware } from "./middleware/auth.js";
+import { apiRateLimiter, webhookRateLimiter } from "./middleware/rate-limiter.js";
 import { healthRouter } from "./routes/health.js";
 import { queueTestRouter } from "./routes/queue-test.js";
 import { casesRouter } from "./routes/cases.js";
@@ -64,13 +65,36 @@ export function createApp(deps: AppDeps = {}): Express {
     }),
   );
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+      },
+    }),
+  );
   app.use(
     cors({
       origin: config.corsOrigin,
       credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Request-Id"],
     }),
   );
+
+  app.use(`/api/${config.version}`, apiRateLimiter);
+  app.use("/webhooks", webhookRateLimiter);
+
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
   app.use(clerkAuthMiddleware);

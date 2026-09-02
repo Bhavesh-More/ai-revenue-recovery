@@ -16,7 +16,11 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "docker:up": "docker compose up -d postgres redis",
+    "docker:down": "docker compose down",
+    "docker:full": "docker compose --profile full up --build",
+    "docker:logs": "docker compose logs -f"
   },
   "packageManager": "yarn@4.12.0",
   "devDependencies": {
