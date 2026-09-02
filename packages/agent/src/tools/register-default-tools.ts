@@ -14,6 +14,7 @@ import { retrievePaymentTool } from "./retrieve-payment.js";
 import { retrieveSubscriptionTool } from "./retrieve-subscription.js";
 import { createRecoveryCaseTool } from "./create-recovery-case.js";
 import { scheduleRecoveryActionTool } from "./schedule-recovery-action.js";
+import { sendResumeCheckoutLinkTool } from "./send-resume-checkout-link.js";
 
 let registered = false;
 
@@ -36,4 +37,5 @@ export function registerDefaultAgentTools(): void {
   registerAgentTool(retrieveSubscriptionTool);
   registerAgentTool(createRecoveryCaseTool);
   registerAgentTool(scheduleRecoveryActionTool);
+  registerAgentTool(sendResumeCheckoutLinkTool);
 }

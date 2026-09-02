@@ -41,14 +41,14 @@ export const sendWhatsappInputSchema = z.object({
 export const retryPaymentInputSchema = z.object({
   customerId: z.uuid(),
   caseId: z.uuid(),
-  paymentId: z.uuid().optional(),
+  paymentId: z.string().min(1).optional(),
 });
 
 export const scheduleRetryInputSchema = z.object({
   customerId: z.uuid(),
   caseId: z.uuid(),
   scheduledFor: z.iso.datetime(),
-  paymentId: z.uuid().optional(),
+  paymentId: z.string().min(1).optional(),
 });
 
 export const sendPaymentLinkInputSchema = z.object({
@@ -56,6 +56,13 @@ export const sendPaymentLinkInputSchema = z.object({
   caseId: z.uuid(),
   amountMinor: z.number().int().positive(),
   currency: z.string().min(3).max(3),
+  channel: toolChannelSchema.optional(),
+});
+
+export const sendResumeCheckoutLinkInputSchema = z.object({
+  customerId: z.uuid(),
+  caseId: z.uuid(),
+  lastSeenPage: z.string().optional(),
   channel: toolChannelSchema.optional(),
 });
 

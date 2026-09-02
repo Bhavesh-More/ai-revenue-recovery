@@ -47,6 +47,15 @@ export const paymentFailedSchema = baseFields.extend({
   attemptCount: z.number().int().nonnegative().default(1),
   failureReason: failureReasonCode.optional(),
   provider: z.string().optional(),
+  providerCode: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  bank: z.string().optional(),
+  region: z.string().optional(),
+  baselineSuccessRate: z.number().min(0).max(1).optional(),
+  currentSuccessRate: z.number().min(0).max(1).optional(),
+  similarFailureCount: z.number().int().nonnegative().optional(),
+  affectedCustomerCount: z.number().int().nonnegative().optional(),
+  timeWindowMinutes: z.number().int().positive().optional(),
 });
 
 export const paymentSucceededSchema = baseFields.extend({
@@ -58,18 +67,42 @@ export const checkoutAbandonedSchema = baseFields.extend({
   type: z.literal("checkout.abandoned"),
   checkoutSessionId: z.string().min(1),
   lastStep: z.enum(["cart", "address", "payment", "review"]).optional(),
+  abandonmentDurationMinutes: z.number().int().nonnegative().optional(),
+  cartValueMinor: z.number().int().nonnegative().optional(),
+  shippingCostMinor: z.number().int().nonnegative().optional(),
+  technicalErrorsCount: z.number().int().nonnegative().optional(),
+  intentScore: z.number().min(0).max(1).optional(),
+  previousAbandonedCount: z.number().int().nonnegative().optional(),
 });
 
 export const subscriptionRenewalFailedSchema = baseFields.extend({
   type: z.literal("subscription.renewal_failed"),
   subscriptionId: z.string().min(1),
   failureReason: failureReasonCode.optional(),
+  planId: z.string().optional(),
+  billingCycle: z.enum(["monthly", "quarterly", "annual"]).optional(),
+  tenureMonths: z.number().int().nonnegative().optional(),
+  previousSuccessfulRenewals: z.number().int().nonnegative().optional(),
+  failedRenewalCount: z.number().int().nonnegative().optional(),
+  gracePeriodDaysRemaining: z.number().int().nonnegative().optional(),
+  mrrMinor: z.number().int().nonnegative().optional(),
+  estimatedLtvMinor: z.number().int().nonnegative().optional(),
 });
 
 export const invoiceOverdueSchema = baseFields.extend({
   type: z.literal("invoice.overdue"),
   invoiceId: z.string().min(1),
   daysOverdue: z.number().int().nonnegative(),
+  invoiceNumber: z.string().optional(),
+  dueDate: z.string().optional(),
+  paymentTerms: z.string().optional(),
+  companyName: z.string().optional(),
+  contactEmail: z.email().optional(),
+  contactPhone: z.string().optional(),
+  purchaseOrderNumber: z.string().optional(),
+  disputeStatus: z.enum(["none", "active", "resolved"]).optional(),
+  historicalAvgDelayDays: z.number().int().nonnegative().optional(),
+  brokenPromisesCount: z.number().int().nonnegative().optional(),
 });
 
 export const mandateFailedSchema = baseFields.extend({
@@ -77,12 +110,38 @@ export const mandateFailedSchema = baseFields.extend({
   mandateId: z.string().min(1),
   mandateState: mandateState.optional(),
   failureReason: failureReasonCode.optional(),
+  paymentId: z.string().optional(),
+  bank: z.string().optional(),
+  provider: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  consecutiveFailures: z.number().int().nonnegative().optional(),
+  successfulDebitsCount: z.number().int().nonnegative().optional(),
+  bankDegradationHint: z.number().min(0).max(1).optional(),
 });
 
 export const customerRespondedSchema = z.object({
   type: z.literal("customer.responded"),
   channel: z.enum(["email", "sms", "whatsapp", "voice"]),
   message: z.string().min(1),
+});
+
+export const voiceCallCompletedSchema = baseFields.extend({
+  type: z.literal("voice.call_completed"),
+  interactionId: z.string().min(1),
+  callDurationSeconds: z.number().int().nonnegative(),
+  transcriptText: z.string().optional(),
+  detectedLanguage: z.string().optional(),
+  sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+  voiceIntent: z.enum([
+    "promise_to_pay",
+    "payment_link_requested",
+    "technical_card_issue",
+    "disputed",
+    "refused_unwilling",
+    "unreachable_no_answer",
+    "unknown",
+  ]).optional(),
+  promisedDate: z.string().optional(),
 });
 
 export const promiseCreatedSchema = baseFields.extend({
@@ -116,6 +175,7 @@ export const revenueEventSchema = z.discriminatedUnion("type", [
   invoiceOverdueSchema,
   mandateFailedSchema,
   customerRespondedSchema,
+  voiceCallCompletedSchema,
   promiseCreatedSchema,
   promiseDueSchema,
   promiseBrokenSchema,

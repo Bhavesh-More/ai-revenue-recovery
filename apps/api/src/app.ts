@@ -15,6 +15,13 @@ import { auditRouter } from "./routes/audit-events.js";
 import { policiesRouter, casesPolicyRouter } from "./routes/policies.js";
 import { casesAgentRouter } from "./routes/cases-agent.js";
 import { llmHealthRouter } from "./routes/llm-health.js";
+import { paymentRecoveryRouter } from "./routes/payment-recovery.js";
+import { checkoutRecoveryRouter } from "./routes/checkout-recovery.js";
+import { subscriptionRecoveryRouter } from "./routes/subscription-recovery.js";
+import { receivablesRecoveryRouter } from "./routes/receivables-recovery.js";
+import { mandateRecoveryRouter } from "./routes/mandate-recovery.js";
+import { voiceRecoveryRouter } from "./routes/voice-recovery.js";
+import { promisesRouter } from "./routes/promises.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -69,6 +76,18 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(`/api/${config.version}`, casesPolicyRouter);
   app.use(`/api/${config.version}`, casesAgentRouter);
   app.use(`/api/${config.version}`, llmHealthRouter);
+  app.use(`/api/${config.version}`, paymentRecoveryRouter);
+  app.use(`/api/${config.version}`, checkoutRecoveryRouter);
+  app.use(`/api/${config.version}`, subscriptionRecoveryRouter);
+  app.use(subscriptionRecoveryRouter);
+  app.use(`/api/${config.version}`, receivablesRecoveryRouter);
+  app.use(receivablesRecoveryRouter);
+  app.use(`/api/${config.version}`, mandateRecoveryRouter);
+  app.use(mandateRecoveryRouter);
+  app.use(`/api/${config.version}`, voiceRecoveryRouter);
+  app.use(voiceRecoveryRouter);
+  app.use(`/api/${config.version}`, promisesRouter);
+  app.use(promisesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

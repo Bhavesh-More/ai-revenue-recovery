@@ -53,6 +53,7 @@ export const revenueEventTypeEnum = pgEnum("revenue_event_type", [
   "invoice.overdue",
   "mandate.failed",
   "customer.responded",
+  "voice.call_completed",
   "promise.created",
   "promise.due",
   "promise.broken",
@@ -73,6 +74,7 @@ export const failureReasonEnum = pgEnum("failure_reason", [
 export const recoveryActionTypeEnum = pgEnum("recovery_action_type", [
   "retry_payment",
   "send_payment_link",
+  "send_resume_checkout_link",
   "send_email",
   "send_sms",
   "send_whatsapp",

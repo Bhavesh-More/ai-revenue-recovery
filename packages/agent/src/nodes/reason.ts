@@ -1,11 +1,21 @@
+import { eq } from "drizzle-orm";
 import { auditService } from "@recovery/audit";
 import { caseLifecycle } from "@recovery/case-lifecycle";
+import { recoveryCases } from "@recovery/db/schema";
 import { agentReasonerOutputSchema } from "@recovery/validation";
+import { reasonOverPaymentDegradationFacts } from "../directions/payment-degradation/analyzer.js";
+import { reasonOverCheckoutDropoffFacts } from "../directions/checkout-dropoff/analyzer.js";
+import { reasonOverSubscriptionRecoveryFacts } from "../directions/failed-subscription/analyzer.js";
+import { reasonOverB2BReceivablesFacts } from "../directions/b2b-receivables/analyzer.js";
+import { reasonOverMandateRetryFacts } from "../directions/mandate-retry/analyzer.js";
+import { reasonOverHinglishVoiceFacts } from "../directions/hinglish-voice/analyzer.js";
+import { reasonOverPromiseTrackerFacts } from "../directions/promise-tracker/analyzer.js";
 import type { AgentStateType } from "../state.js";
 import type { Reasoner } from "../reasoner.js";
 import type { DecisionService, AgentDecisionType } from "../decision-service.js";
 
 export interface ReasonDeps {
+  db: any;
   reasoner: Reasoner;
   decisionService: DecisionService;
 }
@@ -15,6 +25,251 @@ export function reasonNode(deps: ReasonDeps) {
     const caseRow = await caseLifecycle.findById(state.caseId);
     const type: AgentDecisionType =
       state.phase === "context_loaded" ? "analyze" : "recovery";
+
+    if (caseRow.direction === "01_payment_degradation") {
+      const analysis = reasonOverPaymentDegradationFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 01 classified payment degradation as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction01",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "02_checkout_dropoff") {
+      const analysis = reasonOverCheckoutDropoffFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 02 classified checkout drop-off as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction02",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "03_failed_subscription") {
+      const analysis = reasonOverSubscriptionRecoveryFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 03 classified subscription renewal failure as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction03",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "04_b2b_receivables") {
+      const analysis = reasonOverB2BReceivablesFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 04 classified B2B receivable as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction04",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "05_mandate_retry") {
+      const analysis = reasonOverMandateRetryFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 05 classified mandate failure as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction05",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "06_hinglish_voice") {
+      const analysis = reasonOverHinglishVoiceFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 06 classified voice interaction as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction06",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
+
+    if (caseRow.direction === "07_promise_to_pay") {
+      const analysis = reasonOverPromiseTrackerFacts(state.observations ?? []);
+      if (analysis) {
+        await deps.db
+          .update(recoveryCases)
+          .set({
+            recoveryProbability: analysis.recoveryProbability.toFixed(3),
+            latestDecisionSummary: analysis.recommendation.rationale,
+            updatedAt: new Date(),
+          })
+          .where(eq(recoveryCases.id, state.caseId));
+
+        await auditService.record({
+          caseId: state.caseId,
+          action: "decision_created",
+          summary: `Direction 07 classified promise as ${analysis.classification}.`,
+          detail: {
+            runId: state.runId,
+            decisionType: type,
+            classification: analysis.classification,
+            expectedRecoverableMinor: analysis.expectedRecoverableMinor,
+            revenueAtRiskMinor: analysis.revenueAtRiskMinor,
+          },
+          actor: "agent:direction07",
+        });
+
+        return {
+          phase: "reasoned",
+          rootCause: analysis.rootCause,
+          recommendation: analysis.recommendation,
+          observations: analysis.observations,
+        };
+      }
+    }
 
     const output = await deps.reasoner.reason({
       caseId: state.caseId,

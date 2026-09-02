@@ -10,6 +10,19 @@ const TERMINAL_ACTIONS = new Set([
   "stop_case",
 ]);
 
+const IMMEDIATE_RECOVERY_ACTIONS = new Set([
+  "retry_payment",
+  "send_payment_link",
+]);
+
+const CUSTOMER_ACTION_REQUIRED_ACTIONS = new Set([
+  "request_payment_method_update",
+  "send_email",
+  "send_sms",
+  "send_whatsapp",
+  "send_resume_checkout_link",
+]);
+
 export interface ExecuteDeps {
   db: any;
 }
@@ -247,12 +260,50 @@ export function executeNode(deps: ExecuteDeps) {
             actor: "agent:execute",
           });
         } catch {}
+        if (CUSTOMER_ACTION_REQUIRED_ACTIONS.has(rec.actionType)) {
+          try {
+            await caseLifecycle.transition({
+              caseId: state.caseId,
+              toState: "customer_action_required",
+              reason: `customer action required after ${rec.actionType}`,
+              actor: "agent:execute",
+            });
+          } catch {}
+        }
+        if (rec.actionType === "schedule_retry") {
+          try {
+            await caseLifecycle.transition({
+              caseId: state.caseId,
+              toState: "waiting",
+              reason: "retry scheduled for a safer recovery window",
+              actor: "agent:execute",
+            });
+          } catch {}
+        }
+      }
+
+      const recoveredMinor =
+        IMMEDIATE_RECOVERY_ACTIONS.has(rec.actionType) &&
+        ((result.status as string | undefined) ?? "succeeded") === "succeeded"
+          ? typeof rec.parameters?.amountMinor === "number"
+            ? rec.parameters.amountMinor
+            : Number(caseRow.amountAtRiskMinor)
+          : 0;
+
+      if (recoveredMinor > 0) {
+        await caseLifecycle.recordOutcome({
+          caseId: state.caseId,
+          recoveredMinor,
+          promisedMinor: 0,
+          reason: result.message ?? `${rec.actionType} recovered payment`,
+          actor: "agent:execute",
+        });
       }
 
       return {
         phase: "executed",
         outcome: {
-          recoveredMinor: 0,
+          recoveredMinor,
           promisedMinor: 0,
           reason: result.message ?? `[tool] ${rec.actionType} executed`,
         },
