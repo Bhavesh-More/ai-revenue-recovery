@@ -53,6 +53,7 @@ export const revenueEventTypeEnum = pgEnum("revenue_event_type", [
   "invoice.overdue",
   "mandate.failed",
   "customer.responded",
+  "voice.call_completed",
   "promise.created",
   "promise.due",
   "promise.broken",

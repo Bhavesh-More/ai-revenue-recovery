@@ -18,6 +18,9 @@ export function directionForEvent(
     case "mandate.failed":
       return "05_mandate_retry";
     case "customer.responded":
+      return "07_promise_to_pay";
+    case "voice.call_completed":
+      return "06_hinglish_voice";
     case "promise.created":
     case "promise.due":
     case "promise.broken":

@@ -170,6 +170,14 @@ export function loadContextNode(deps: LoadContextDeps) {
       pushIfPresent(facts, "consecutive_failures", payload.consecutiveFailures);
       pushIfPresent(facts, "successful_debits_count", payload.successfulDebitsCount);
       pushIfPresent(facts, "bank_degradation_hint", payload.bankDegradationHint);
+      // Hinglish voice fields
+      pushIfPresent(facts, "voice_interaction_id", payload.interactionId);
+      pushIfPresent(facts, "call_duration_seconds", payload.callDurationSeconds);
+      pushIfPresent(facts, "transcript_text", payload.transcriptText);
+      pushIfPresent(facts, "detected_language", payload.detectedLanguage);
+      pushIfPresent(facts, "sentiment", payload.sentiment);
+      pushIfPresent(facts, "voice_intent", payload.voiceIntent);
+      pushIfPresent(facts, "promised_date", payload.promisedDate);
     }
 
     await auditService.record({

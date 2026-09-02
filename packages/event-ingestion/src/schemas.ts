@@ -125,6 +125,25 @@ export const customerRespondedSchema = z.object({
   message: z.string().min(1),
 });
 
+export const voiceCallCompletedSchema = baseFields.extend({
+  type: z.literal("voice.call_completed"),
+  interactionId: z.string().min(1),
+  callDurationSeconds: z.number().int().nonnegative(),
+  transcriptText: z.string().optional(),
+  detectedLanguage: z.string().optional(),
+  sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+  voiceIntent: z.enum([
+    "promise_to_pay",
+    "payment_link_requested",
+    "technical_card_issue",
+    "disputed",
+    "refused_unwilling",
+    "unreachable_no_answer",
+    "unknown",
+  ]).optional(),
+  promisedDate: z.string().optional(),
+});
+
 export const promiseCreatedSchema = baseFields.extend({
   type: z.literal("promise.created"),
   promiseId: z.string().min(1),
@@ -156,6 +175,7 @@ export const revenueEventSchema = z.discriminatedUnion("type", [
   invoiceOverdueSchema,
   mandateFailedSchema,
   customerRespondedSchema,
+  voiceCallCompletedSchema,
   promiseCreatedSchema,
   promiseDueSchema,
   promiseBrokenSchema,
