@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ThemeProvider } from "../context/ThemeContext";
 
@@ -19,11 +20,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_dHVtb24tZHVja2xpbmctNzYuY2xlcmsuYWNjb3VudHMuZGV2JA";
   return (
-    <html lang="en" className={`${jetbrainsMono.variable} h-full antialiased font-mono`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-[#F0F2F5] dark:bg-[#131416] text-[#1A1A1A] dark:text-[#F9FAFB] font-mono transition-colors">
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider publishableKey={clerkKey}>
+      <html lang="en" className={`${jetbrainsMono.variable} h-full antialiased font-mono`} suppressHydrationWarning>
+        <body className="min-h-full flex flex-col bg-[#F0F2F5] dark:bg-[#131416] text-[#1A1A1A] dark:text-[#F9FAFB] font-mono transition-colors">
+          <ThemeProvider>{children}</ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

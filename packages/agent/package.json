@@ -21,6 +21,7 @@
     "@recovery/db": "workspace:*",
     "@recovery/integrations": "workspace:*",
     "@recovery/llm": "workspace:*",
+    "@recovery/logger": "workspace:*",
     "@recovery/policy": "workspace:*",
     "@recovery/types": "workspace:*",
     "@recovery/validation": "workspace:*",

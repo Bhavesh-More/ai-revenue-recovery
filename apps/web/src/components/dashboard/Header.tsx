@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useTheme } from '../../context/ThemeContext';
-
 import Link from 'next/link';
 
 export interface HeaderProps {
@@ -110,6 +110,19 @@ export function Header({
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </span>
         </button>
+
+        <div className="flex items-center gap-2 pl-2 border-l border-[#E5E7EB] dark:border-[#2A2B2D]">
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button type="button" className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#00B074] text-white hover:bg-[#009663] transition-colors cursor-pointer">
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+        </div>
       </div>
     </header>
   );

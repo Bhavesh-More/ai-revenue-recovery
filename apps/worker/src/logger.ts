@@ -1,18 +1,11 @@
-import { pino, type Logger } from "pino";
-import { loadEnv } from "@recovery/config";
+import { getStructuredLogger, createChildLogger, type Logger } from "@recovery/logger";
 
-let cached: Logger | null = null;
+export type { Logger };
 
 export function getWorkerLogger(): Logger {
-  if (cached) return cached;
-  const env = loadEnv();
-  cached = pino({
-    level: env.LOG_LEVEL,
-    base: {
-      app: "recovery-worker",
-      env: env.NODE_ENV,
-    },
-    timestamp: pino.stdTimeFunctions.isoTime,
-  });
-  return cached;
+  return getStructuredLogger("recovery-worker");
+}
+
+export function createWorkerChildLogger(componentName: string): Logger {
+  return createChildLogger(componentName);
 }
