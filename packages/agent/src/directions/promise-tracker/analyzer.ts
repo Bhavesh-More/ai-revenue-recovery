@@ -54,6 +54,15 @@ function parseNumber(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function toSafeIsoDatetime(val: string | undefined, fallbackOffsetMs: number): string {
+  if (!val) return new Date(Date.now() + fallbackOffsetMs).toISOString();
+  try {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  } catch {}
+  return new Date(Date.now() + fallbackOffsetMs).toISOString();
+}
+
 function parseFactLine(fact: string): [string, string] | null {
   const idx = fact.indexOf("=");
   if (idx === -1) return null;
@@ -241,15 +250,20 @@ function chooseAction(
         },
       };
 
-    case "rescheduled":
+    case "rescheduled": {
+      const scheduledIso = toSafeIsoDatetime(
+        facts.promisedDate,
+        7 * 3600 * 24 * 1000,
+      );
       return {
         actionType: "schedule_retry",
         parameters: {
-          scheduledFor: facts.promisedDate ?? new Date(Date.now() + 7 * 3600 * 24 * 1000).toISOString(),
+          scheduledFor: scheduledIso,
           direction: "07_promise_to_pay",
           reason: "promise date rescheduled by customer",
         },
       };
+    }
 
     case "conditional_pending":
       return {
@@ -261,15 +275,20 @@ function chooseAction(
       };
 
     case "firm_promise_pending":
-    default:
+    default: {
+      const scheduledIso = toSafeIsoDatetime(
+        facts.promisedDate,
+        3 * 3600 * 24 * 1000,
+      );
       return {
         actionType: "schedule_retry",
         parameters: {
-          scheduledFor: facts.promisedDate ?? new Date(Date.now() + 3 * 3600 * 24 * 1000).toISOString(),
+          scheduledFor: scheduledIso,
           direction: "07_promise_to_pay",
           reason: "tracking active promise to pay date",
         },
       };
+    }
   }
 }
 

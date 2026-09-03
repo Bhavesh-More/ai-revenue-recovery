@@ -2,7 +2,7 @@ import type { CaseState, AuditAction } from "@recovery/types";
 import { InvalidStateTransitionError } from "./errors.js";
 
 export const ALLOWED_TRANSITIONS: Readonly<Record<CaseState, readonly CaseState[]>> = {
-  detected: ["investigating", "stopped", "failed"],
+  detected: ["investigating", "action_selected", "escalated", "stopped", "failed"],
   investigating: ["action_selected", "escalated", "stopped", "failed"],
   action_selected: [
     "waiting",
@@ -34,12 +34,21 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<CaseState, readonly CaseState[
     "stopped",
     "failed",
   ],
-  escalated: ["recovering", "action_selected", "stopped", "failed"],
+  escalated: [
+    "recovering",
+    "action_selected",
+    "recovered",
+    "waiting",
+    "customer_action_required",
+    "stopped",
+    "failed",
+  ],
   // Failed cases can be re-opened into recovering for retry-able failures.
   failed: ["recovering"],
   recovered: [],
   stopped: [],
 };
+
 
 export function canTransition(from: CaseState, to: CaseState): boolean {
   return ALLOWED_TRANSITIONS[from].includes(to);

@@ -8,8 +8,9 @@
   ],
   "scripts": {
     "dev": "turbo dev",
+    "dev:all": "node scripts/dev-all.mjs",
     "server": "turbo run server --filter=@recovery/api",
-    "tunnel": "ngrok http 3000",
+    "tunnel": "ngrok http 4000",
     "tunnel:api": "yarn workspace @recovery/api tunnel",
     "worker": "turbo run dev --filter=@recovery/worker",
     "build": "turbo build",
@@ -21,7 +22,8 @@
     "docker:down": "docker compose down",
     "docker:full": "docker compose --profile full up --build",
     "docker:logs": "docker compose logs -f",
-    "seed:scenarios": "tsx scripts/seed-demo-scenarios.ts"
+    "seed:scenarios": "tsx scripts/seed-demo-scenarios.ts",
+    "test:e2e": "yarn workspace web test:e2e"
   },
   "packageManager": "yarn@4.12.0",
   "devDependencies": {

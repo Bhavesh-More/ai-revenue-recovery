@@ -1,4 +1,5 @@
 import type { Response } from "express";
+
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -6,16 +7,25 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
+function jsonSafe<T>(value: T): any {
+  if (value === undefined || value === null) return value;
+  return JSON.parse(
+    JSON.stringify(value, (_k, v) =>
+      typeof v === "bigint" ? Number(v) : v,
+    ),
+  );
+}
+
 export function ok<T>(res: Response, data: T): Response {
-  return res.status(200).json({ data });
+  return res.status(200).json({ data: jsonSafe(data) });
 }
 
 export function created<T>(res: Response, data: T): Response {
-  return res.status(201).json({ data });
+  return res.status(201).json({ data: jsonSafe(data) });
 }
 
 export function accepted<T>(res: Response, data: T): Response {
-  return res.status(202).json({ data });
+  return res.status(202).json({ data: jsonSafe(data) });
 }
 
 export function collection<T>(
@@ -23,7 +33,7 @@ export function collection<T>(
   data: T[],
   pagination: PaginationMeta,
 ): Response {
-  return res.status(200).json({ data, meta: { pagination } });
+  return res.status(200).json({ data: jsonSafe(data), meta: { pagination } });
 }
 
 export function noContent(res: Response): Response {

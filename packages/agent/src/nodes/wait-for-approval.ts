@@ -1,5 +1,6 @@
 import { interrupt } from "@langchain/langgraph";
 import { auditService } from "@recovery/audit";
+import { caseLifecycle } from "@recovery/case-lifecycle";
 import type { AgentStateType } from "../state.js";
 
 export interface WaitForApprovalDeps {
@@ -43,9 +44,20 @@ export function waitForApprovalNode(_deps: WaitForApprovalDeps) {
       actor: "agent:waitForApproval",
     });
 
+    try {
+      await caseLifecycle.transition({
+        caseId: state.caseId,
+        toState: "escalated",
+        reason: state.policyResult?.reasons.join("; ") || "supervisor approval required",
+        actor: "agent:waitForApproval",
+        decisionId,
+      });
+    } catch {}
+
     // Interrupt pauses the graph. Resume happens when /decisions/:id/approve or /reject
     // calls graph.invoke(null, { configurable: { thread_id: state.caseId } })
     const resumed = interrupt(payload);
+
 
     const approval = {
       decisionId,

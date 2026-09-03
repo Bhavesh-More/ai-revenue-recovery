@@ -32,10 +32,18 @@ export function AuditLogPage() {
       .then((apiLogs) => {
         if (Array.isArray(apiLogs) && apiLogs.length > 0) {
           const mapped: AuditLogEntry[] = apiLogs.map((l) => {
-            const actorType: AuditActorType = l.actor?.includes('agent') ? 'ai' : l.actor?.includes('api') ? 'system' : 'user';
+            const actorType: AuditActorType =
+              l.actor?.includes('agent') || l.actor?.includes('scenario') || l.actor?.includes('bot')
+                ? 'ai'
+                : l.actor?.includes('operator') || l.actor?.includes('user') || l.actor?.includes('admin')
+                ? 'user'
+                : 'system';
             const objectType: AuditObjectType = 'case';
-            const result: AuditResult = 'success';
-            const dateStr = new Date(l.timestamp).toISOString().replace('T', ' ').slice(0, 19);
+            const result: AuditResult = l.action.includes('fail') || l.action.includes('stop') ? 'failed' : 'success';
+            const dateStr = new Date(l.occurredAt || l.timestamp || Date.now())
+              .toISOString()
+              .replace('T', ' ')
+              .slice(0, 19);
 
             return {
               id: l.id,

@@ -11,9 +11,10 @@ import { PolicyDecision } from './PolicyDecision';
 
 export interface CaseDetailPageProps {
   caseDetail: RecoveryCaseDetail;
+  onRefresh?: () => void;
 }
 
-export function CaseDetailPage({ caseDetail }: CaseDetailPageProps) {
+export function CaseDetailPage({ caseDetail, onRefresh }: CaseDetailPageProps) {
   return (
     <div className="flex flex-col font-mono">
       {/* Floating Cloudy Sticky Breadcrumbs Bar */}
@@ -51,7 +52,7 @@ export function CaseDetailPage({ caseDetail }: CaseDetailPageProps) {
       {/* Main Page Content */}
       <div className="p-6 lg:p-8 flex flex-col gap-6">
         {/* Header & Metrics */}
-        <CaseHeaderCard caseDetail={caseDetail} />
+        <CaseHeaderCard caseDetail={caseDetail} onRefresh={onRefresh} />
 
         {/* Main 2-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

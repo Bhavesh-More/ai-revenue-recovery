@@ -45,6 +45,7 @@ export interface RecoveryCaseDetail {
   outcome: CaseOutcome;
   aiDecision: AIDecision;
   policyDecision: PolicyDecisionData;
+  batchId?: string | null;
 }
 
 export const mockCaseDetails: Record<string, RecoveryCaseDetail> = {

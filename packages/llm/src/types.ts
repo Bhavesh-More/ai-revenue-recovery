@@ -39,8 +39,10 @@ export interface ChatRequest {
 }
 
 export interface OllamaClientConfig {
-  apiKey: string;
+  apiKey?: string;
+  apiKeys?: string[];
   baseUrl: string;
   model: string;
   timeoutMs?: number;
 }
+

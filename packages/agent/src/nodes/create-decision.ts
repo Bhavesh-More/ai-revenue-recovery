@@ -1,3 +1,4 @@
+import { caseLifecycle } from "@recovery/case-lifecycle";
 import type { AgentStateType } from "../state.js";
 import type { DecisionService } from "../decision-service.js";
 
@@ -53,6 +54,18 @@ export function createDecisionNode(deps: CreateDecisionDeps) {
         state.recommendation as unknown as Record<string, unknown>,
       policyResult: state.policyResult,
     });
+
+    if (decision.status === "awaiting_approval") {
+      try {
+        await caseLifecycle.transition({
+          caseId: state.caseId,
+          toState: "escalated",
+          reason: state.policyResult?.reasons.join("; ") || "supervisor approval required",
+          actor: "agent:createDecision",
+          decisionId: decision.id,
+        });
+      } catch {}
+    }
 
     return {
       approval:

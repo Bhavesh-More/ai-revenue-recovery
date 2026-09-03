@@ -15,7 +15,7 @@ llmHealthRouter.get(
     const log = getLogger();
     const client = new OllamaClient(
       {
-        apiKey: env.OLLAMA_API_KEY,
+        apiKeys: env.OLLAMA_API_KEYS,
         baseUrl: env.OLLAMA_BASE_URL,
         model: env.OLLAMA_MODEL,
         timeoutMs: env.OLLAMA_TIMEOUT_MS,
@@ -42,7 +42,9 @@ llmHealthRouter.get(
         completionTokens: response.usage.completionTokens,
         totalTokens: response.usage.totalTokens,
         responseSnippet: snippet,
+        keyPool: client.getKeyStats(),
       });
+
     } catch (err) {
       const latencyMs = Date.now() - startedAt;
       if (err instanceof OllamaTimeoutError || isOllamaError(err)) {

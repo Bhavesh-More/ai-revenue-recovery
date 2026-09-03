@@ -4,13 +4,19 @@ import { eventBroadcaster, StreamEventPayload } from "../lib/broadcaster.js";
 export const streamRouter = Router();
 
 streamRouter.get("/stream", (req, res) => {
-  // Set SSE HTTP Headers
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache, no-transform",
-    Connection: "keep-alive",
-    "X-Accel-Buffering": "no",
-  });
+  const origin = (req.headers.origin as string) || "http://localhost:3000";
+
+  // Set SSE HTTP Headers with explicit CORS for EventSource
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("X-Accel-Buffering", "no");
+
+  if (typeof (res as any).flushHeaders === "function") {
+    (res as any).flushHeaders();
+  }
 
   // Flush initial connection event
   const initPayload: StreamEventPayload = {
@@ -27,10 +33,10 @@ streamRouter.get("/stream", (req, res) => {
 
   eventBroadcaster.on("event", onEvent);
 
-  // Send a keep-alive ping every 15 seconds to prevent gateway/proxy timeouts
+  // Send a keep-alive ping every 10 seconds to prevent timeout
   const pingInterval = setInterval(() => {
     res.write(": ping\n\n");
-  }, 15000);
+  }, 10000);
 
   // Clean up when client closes connection
   req.on("close", () => {

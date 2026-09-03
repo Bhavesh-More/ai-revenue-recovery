@@ -25,25 +25,27 @@ export function loadReasonerFromEnv(opts: LoadReasonerOptions = {}): Reasoner {
     );
   }
 
-  const apiKey = opts.apiKey ?? env.OLLAMA_API_KEY;
+  const apiKeys = opts.apiKey ? [opts.apiKey] : env.OLLAMA_API_KEYS;
   const baseUrl = opts.baseUrl ?? env.OLLAMA_BASE_URL;
   const model = opts.model ?? env.OLLAMA_MODEL;
   const timeoutMs = opts.timeoutMs ?? env.OLLAMA_TIMEOUT_MS;
 
-  if (!apiKey) {
+  if (!apiKeys || apiKeys.length === 0) {
     throw new AgentError(
       "AGENT_ERROR",
-      "OLLAMA_API_KEY is required to construct the LLM reasoner.",
+      "At least one Ollama API key (OLLAMA_API_KEY_1, OLLAMA_API_KEY_2...) is required to construct the LLM reasoner.",
       "reason",
     );
   }
 
+
   const client = new OllamaClient(
-    { apiKey, baseUrl, model, timeoutMs },
+    { apiKeys, baseUrl, model, timeoutMs },
     opts.logger,
   );
 
   return new OllamaReasoner(client, { model });
 }
+
 
 export { StubReasoner };

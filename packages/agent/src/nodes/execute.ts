@@ -10,12 +10,8 @@ const TERMINAL_ACTIONS = new Set([
   "stop_case",
 ]);
 
-const IMMEDIATE_RECOVERY_ACTIONS = new Set([
-  "retry_payment",
-  "send_payment_link",
-]);
-
 const CUSTOMER_ACTION_REQUIRED_ACTIONS = new Set([
+  "send_payment_link",
   "request_payment_method_update",
   "send_email",
   "send_sms",
@@ -65,11 +61,51 @@ export function executeNode(deps: ExecuteDeps) {
 
     const caseRow = await caseLifecycle.findById(state.caseId);
 
+    const amountVal =
+      typeof rec.parameters?.amountMinor === "number"
+        ? rec.parameters.amountMinor
+        : typeof rec.parameters?.promisedMinor === "number"
+        ? rec.parameters.promisedMinor
+        : Number(caseRow.amountAtRiskMinor || 100);
+
+    let safeScheduledFor: string | undefined = undefined;
+    if (rec.actionType === "schedule_retry" || rec.parameters?.scheduledFor) {
+      const raw = rec.parameters?.scheduledFor;
+      if (raw) {
+        try {
+          const d = new Date(String(raw));
+          safeScheduledFor = isNaN(d.getTime()) ? new Date(Date.now() + 86400000).toISOString() : d.toISOString();
+        } catch {
+          safeScheduledFor = new Date(Date.now() + 86400000).toISOString();
+        }
+      } else {
+        safeScheduledFor = new Date(Date.now() + 86400000).toISOString();
+      }
+    }
+
     const toolInput = {
+      amountMinor: amountVal,
+      promisedMinor: amountVal,
+      currency:
+        typeof rec.parameters?.currency === "string"
+          ? rec.parameters.currency
+          : caseRow.currency || "INR",
+      dueAt:
+        rec.parameters?.dueAt ||
+        new Date(Date.now() + 2 * 86400000).toISOString(),
+      promiseType: rec.parameters?.promiseType || "firm",
+      channel: rec.parameters?.channel || "whatsapp",
+      template: rec.parameters?.template || "default_recovery_template",
+      lastSeenPage: rec.parameters?.lastSeenPage || "checkout",
+      reason: rec.parameters?.reason || rec.rationale || "Automated recovery action",
+      escalationTier: rec.parameters?.escalationTier || "operator",
       ...(rec.parameters ?? {}),
+      ...(safeScheduledFor ? { scheduledFor: safeScheduledFor } : {}),
       customerId: caseRow.customerId,
       caseId: state.caseId,
     };
+
+
 
     const dispatch = await dispatchAgentTool({
       tool,
@@ -235,7 +271,25 @@ export function executeNode(deps: ExecuteDeps) {
         tx,
       );
 
-      if (!TERMINAL_ACTIONS.has(rec.actionType)) {
+      if (rec.actionType === "escalate_to_human") {
+        try {
+          await caseLifecycle.transition({
+            caseId: state.caseId,
+            toState: "escalated",
+            reason: rec.rationale || "Escalated to human supervisor",
+            actor: "agent:execute",
+          });
+        } catch {}
+      } else if (rec.actionType === "stop_case") {
+        try {
+          await caseLifecycle.transition({
+            caseId: state.caseId,
+            toState: "stopped",
+            reason: rec.rationale || "Case stopped by policy / decision",
+            actor: "agent:execute",
+          });
+        } catch {}
+      } else {
         try {
           await caseLifecycle.transition({
             caseId: state.caseId,
@@ -282,28 +336,13 @@ export function executeNode(deps: ExecuteDeps) {
         }
       }
 
-      const recoveredMinor =
-        IMMEDIATE_RECOVERY_ACTIONS.has(rec.actionType) &&
-        ((result.status as string | undefined) ?? "succeeded") === "succeeded"
-          ? typeof rec.parameters?.amountMinor === "number"
-            ? rec.parameters.amountMinor
-            : Number(caseRow.amountAtRiskMinor)
-          : 0;
 
-      if (recoveredMinor > 0) {
-        await caseLifecycle.recordOutcome({
-          caseId: state.caseId,
-          recoveredMinor,
-          promisedMinor: 0,
-          reason: result.message ?? `${rec.actionType} recovered payment`,
-          actor: "agent:execute",
-        });
-      }
-
+      // Action execution only executes the action and updates workflow state.
+      // It does NOT decide revenue recovery outcomes. Recovery is determined strictly by subsequent customer outcome.
       return {
         phase: "executed",
         outcome: {
-          recoveredMinor,
+          recoveredMinor: 0,
           promisedMinor: 0,
           reason: result.message ?? `[tool] ${rec.actionType} executed`,
         },

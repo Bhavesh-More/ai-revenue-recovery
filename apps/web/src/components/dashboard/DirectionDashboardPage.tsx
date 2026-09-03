@@ -7,7 +7,12 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MetricCard } from './MetricCard';
 import { DirectionData, DirectionCaseItem } from '../../mocks/directions';
-import { fetchRecoveryCases, formatCurrencyMinor } from '../../lib/api';
+import {
+  fetchRecoveryCases,
+  fetchMetrics,
+  formatCurrencyMinor,
+  SingleMetricSet,
+} from '../../lib/api';
 
 interface DirectionDashboardPageProps {
   direction: DirectionData;
@@ -18,13 +23,17 @@ export function DirectionDashboardPage({
   direction,
   activeItem,
 }: DirectionDashboardPageProps) {
-  const [casesList, setCasesList] = useState<DirectionCaseItem[]>(direction.cases);
+  const [casesList, setCasesList] = useState<DirectionCaseItem[]>([]);
+  const [dirMetrics, setDirMetrics] = useState<SingleMetricSet | null>(null);
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
-    fetchRecoveryCases({ direction: direction.code, limit: 50 })
-      .then((apiCases) => {
-        if (Array.isArray(apiCases) && apiCases.length > 0) {
+    Promise.all([
+      fetchRecoveryCases({ direction: direction.code, limit: 50 }),
+      fetchMetrics({ direction: direction.code }).catch(() => null),
+    ])
+      .then(([apiCases, m]) => {
+        if (Array.isArray(apiCases)) {
           const mapped: DirectionCaseItem[] = apiCases.map((c) => ({
             caseId: c.id,
             customerName: `Customer ${c.customerId.slice(0, 8)}`,
@@ -32,17 +41,61 @@ export function DirectionDashboardPage({
             amount: formatCurrencyMinor(c.amountAtRiskMinor),
             status: (c.currentState || 'detected') as any,
             riskTier: (c.riskTier || 'medium') as any,
-            latestAction: c.latestDecisionSummary || 'Initial direction observation',
+            latestAction: c.latestDecisionSummary || 'Autonomous AI observation active',
             updatedAt: 'Just now',
           }));
           setCasesList(mapped);
           setIsLive(true);
+        }
+
+        if (m) {
+          setDirMetrics(m);
         }
       })
       .catch(() => {
         setIsLive(false);
       });
   }, [direction.code]);
+
+  const atRiskMinor = dirMetrics?.revenueAtRiskMinor ?? 0;
+  const recoveredMinor = dirMetrics?.actualRecoveredMinor ?? 0;
+  const totalCases = dirMetrics?.totalCases ?? casesList.length;
+  const activeCases = dirMetrics?.activeCases ?? casesList.length;
+  const rateStr = totalCases > 0 ? `${((dirMetrics?.recoveryRate ?? 0) * 100).toFixed(1)}%` : '0%';
+
+  // Compute live breakdown from cases
+  const highRiskCount = casesList.filter((c) => c.riskTier === 'high' || c.riskTier === 'critical').length;
+  const mediumRiskCount = casesList.filter((c) => c.riskTier === 'medium').length;
+  const lowRiskCount = casesList.filter((c) => c.riskTier === 'low').length;
+  const recoveringCount = casesList.filter((c) => c.status === 'recovering' || c.status === 'waiting').length;
+
+  const totalBreakdown = Math.max(1, casesList.length);
+  const breakdownItems = [
+    {
+      label: 'High & Critical Risk Interventions',
+      count: highRiskCount,
+      percentage: Math.round((highRiskCount / totalBreakdown) * 100),
+      color: '#EF4444',
+    },
+    {
+      label: 'Medium Risk Standard Sequence',
+      count: mediumRiskCount,
+      percentage: Math.round((mediumRiskCount / totalBreakdown) * 100),
+      color: '#F59E0B',
+    },
+    {
+      label: 'Low Risk Optimal Retries',
+      count: lowRiskCount,
+      percentage: Math.round((lowRiskCount / totalBreakdown) * 100),
+      color: '#10B981',
+    },
+    {
+      label: 'Active Autonomous Dunning',
+      count: recoveringCount,
+      percentage: Math.round((recoveringCount / totalBreakdown) * 100),
+      color: '#3B82F6',
+    },
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F0F2F5] dark:bg-[#131416] font-mono text-[#1A1A1A] dark:text-[#F9FAFB] transition-colors">
@@ -82,7 +135,7 @@ export function DirectionDashboardPage({
                         : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20'
                     }`}
                   >
-                    {isLive ? 'Live API Connected' : 'Sandbox Demo Baseline'}
+                    {isLive ? 'Live API Connected' : 'Connecting...'}
                   </span>
                 </div>
                 <p className="text-xs text-[#8C8C8C] dark:text-[#9CA3AF] mt-1 font-mono">
@@ -97,7 +150,7 @@ export function DirectionDashboardPage({
                   Direction Recovery Rate
                 </span>
                 <span className="text-lg font-bold text-[#00B074]">
-                  {direction.recoveryRate}
+                  {rateStr}
                 </span>
               </div>
               <div className="h-8 w-px bg-[#E5E7EB] dark:bg-[#2A2B2D]" />
@@ -112,15 +165,31 @@ export function DirectionDashboardPage({
 
           {/* Metric Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {direction.metrics.map((metric, index) => (
-              <MetricCard
-                key={index}
-                icon={metric.icon}
-                label={metric.label}
-                value={metric.value}
-                detail={metric.detail}
-              />
-            ))}
+            <MetricCard
+              icon="lucide:alert-circle"
+              label="REVENUE AT RISK"
+              value={formatCurrencyMinor(atRiskMinor)}
+              detail="Live Direction Sum"
+            />
+            <MetricCard
+              icon="lucide:check-circle"
+              label="REVENUE RECOVERED"
+              value={formatCurrencyMinor(recoveredMinor)}
+              detail="Total Settled"
+            />
+            <MetricCard
+              icon="lucide:users"
+              label="ACTIVE CASES"
+              value={String(activeCases)}
+              detail={`${totalCases} total registered`}
+              href="/recovery-cases"
+            />
+            <MetricCard
+              icon="lucide:refresh-cw"
+              label="RECOVERY RATE"
+              value={rateStr}
+              detail="Verified Conversion"
+            />
           </div>
 
           {/* Analytics & Distribution Section */}
@@ -130,7 +199,7 @@ export function DirectionDashboardPage({
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-base font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-                    {direction.breakdownTitle}
+                    Risk & Diagnostic Distribution
                   </h2>
                   <p className="text-xs text-[#8C8C8C] dark:text-[#9CA3AF] mt-0.5">
                     Categorized AI recovery reasoning & diagnostic trends
@@ -142,7 +211,7 @@ export function DirectionDashboardPage({
               </div>
 
               <div className="space-y-4">
-                {direction.breakdownItems.map((item, index) => (
+                {breakdownItems.map((item, index) => (
                   <div key={index} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-mono">
                       <span className="font-semibold text-[#1A1A1A] dark:text-[#F9FAFB]">
@@ -181,7 +250,7 @@ export function DirectionDashboardPage({
                     Active Policy Bounds:
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-[#8C8C8C] dark:text-[#9CA3AF]">
-                    <li>Max communication limit: 3 per day</li>
+                    <li>Max communication limit: 4 per cycle</li>
                     <li>Cooloff period: 12 hours</li>
                     <li>High-value escalation threshold: ₹5,00,000</li>
                     <li>Human approval requirement: Level 2</li>
@@ -233,64 +302,72 @@ export function DirectionDashboardPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#2A2B2D]">
-                  {casesList.map((c) => (
-                    <tr
-                      key={c.caseId}
-                      className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-                        <Link
-                          href={`/recovery-cases/${c.caseId}`}
-                          className="hover:underline text-[#3B82F6]"
-                        >
-                          {c.caseId}
-                        </Link>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-[#1A1A1A] dark:text-[#F9FAFB]">
-                          {c.customerName}
-                        </div>
-                        <div className="text-[10px] text-[#8C8C8C] dark:text-[#9CA3AF]">
-                          {c.customerEmail}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-                        {c.amount}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
-                            c.status === 'recovered'
-                              ? 'bg-[#00B074]/10 text-[#00B074] border-[#00B074]/20'
-                              : c.status === 'escalated'
-                              ? 'bg-[#FF4444]/10 text-[#FF4444] border-[#FF4444]/20'
-                              : 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/20'
-                          }`}
-                        >
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                            c.riskTier === 'high' || c.riskTier === 'critical'
-                              ? 'bg-red-500/10 text-red-500'
-                              : 'bg-emerald-500/10 text-emerald-500'
-                          }`}
-                        >
-                          {c.riskTier}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-[#4A4A4A] dark:text-[#D1D5DB]">
-                        <code className="text-[11px] bg-[#F0F2F5] dark:bg-[#202123] px-1.5 py-0.5 rounded border border-[#E5E7EB] dark:border-[#374151]">
-                          {c.latestAction}
-                        </code>
-                      </td>
-                      <td className="py-3.5 px-4 text-[#8C8C8C] dark:text-[#9CA3AF]">
-                        {c.updatedAt}
+                  {casesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-[#8C8C8C]">
+                        No cases found for this direction.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    casesList.map((c) => (
+                      <tr
+                        key={c.caseId}
+                        className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <td className="py-3.5 px-4 font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+                          <Link
+                            href={`/recovery-cases/${c.caseId}`}
+                            className="hover:underline text-[#3B82F6]"
+                          >
+                            {c.caseId}
+                          </Link>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-[#1A1A1A] dark:text-[#F9FAFB]">
+                            {c.customerName}
+                          </div>
+                          <div className="text-[10px] text-[#8C8C8C] dark:text-[#9CA3AF]">
+                            {c.customerEmail}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+                          {c.amount}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
+                              c.status === 'recovered'
+                                ? 'bg-[#00B074]/10 text-[#00B074] border-[#00B074]/20'
+                                : c.status === 'escalated'
+                                ? 'bg-[#FF4444]/10 text-[#FF4444] border-[#FF4444]/20'
+                                : 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/20'
+                            }`}
+                          >
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                              c.riskTier === 'high' || c.riskTier === 'critical'
+                                ? 'bg-red-500/10 text-red-500'
+                                : 'bg-emerald-500/10 text-emerald-500'
+                            }`}
+                          >
+                            {c.riskTier}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-[#4A4A4A] dark:text-[#D1D5DB]">
+                          <code className="text-[11px] bg-[#F0F2F5] dark:bg-[#202123] px-1.5 py-0.5 rounded border border-[#E5E7EB] dark:border-[#374151]">
+                            {c.latestAction}
+                          </code>
+                        </td>
+                        <td className="py-3.5 px-4 text-[#8C8C8C] dark:text-[#9CA3AF]">
+                          {c.updatedAt}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

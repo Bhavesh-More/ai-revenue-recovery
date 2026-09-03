@@ -12,3 +12,6 @@ export * from "./decision-service.js";
 export * from "./graph.js";
 export * from "./runner.js";
 export * from "./job-tracker.js";
+export * from "./nodes/reason.js";
+export * from "./batch-simulator.js";
+

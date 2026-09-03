@@ -11,8 +11,9 @@ import { collection } from "../lib/responses.js";
 
 export const auditRouter = Router();
 
+// Support both /audit-events and /audit
 auditRouter.get(
-  "/audit-events",
+  ["/audit-events", "/audit"],
   asyncHandler(async (req, res) => {
     const parsed = listAuditEventsQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -47,7 +48,7 @@ auditRouter.get(
 );
 
 auditRouter.get(
-  "/recovery-cases/:caseId/audit-events",
+  ["/recovery-cases/:caseId/audit-events", "/recovery-cases/:caseId/audit"],
   asyncHandler(async (req, res) => {
     const caseId = String(req.params.caseId);
     const parsed = listCaseAuditEventsQuerySchema.safeParse(req.query);

@@ -235,7 +235,7 @@ export function RecoveryCasesPage({ initialCases = mockRecoveryCases }: Recovery
 
       <div className="bg-white dark:bg-[#171819] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-xl shadow-sm overflow-hidden flex flex-col transition-colors">
         <RecoveryCasesTable
-          cases={filteredAndSortedCases}
+          cases={filteredAndSortedCases.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
           sortField={sortField}
           sortDirection={sortDirection}
           onSort={handleSort}
@@ -245,7 +245,10 @@ export function RecoveryCasesPage({ initialCases = mockRecoveryCases }: Recovery
           pageSize={pageSize}
           currentPage={currentPage}
           totalDisplayedCount={filteredAndSortedCases.length}
-          onPageSizeChange={setPageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
           onPageChange={setCurrentPage}
         />
       </div>

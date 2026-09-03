@@ -5,6 +5,7 @@ import { Icon } from '@iconify/react';
 import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useTheme } from '../../context/ThemeContext';
 import Link from 'next/link';
+import { LiveDemoModal } from './LiveDemoModal';
 
 export interface HeaderProps {
   showNotificationBadge?: boolean;
@@ -26,6 +27,7 @@ export function Header({
   onRunBatchClick,
 }: HeaderProps) {
   const [query, setQuery] = useState('');
+  const [liveDemoOpen, setLiveDemoOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   const handleSearchChange = (value: string) => {
@@ -82,6 +84,17 @@ export function Header({
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#FF4444] rounded-full" />
           )}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setLiveDemoOpen(true)}
+          className="flex items-center gap-2 bg-[#2563EB] text-white dark:bg-[#3B82F6] dark:text-white px-3.5 py-2 rounded-lg text-sm font-bold hover:bg-[#1D4ED8] dark:hover:bg-[#2563EB] transition-colors shadow-sm cursor-pointer shrink-0"
+        >
+          <Icon icon="lucide:play-circle" className="text-base" />
+          <span className="hidden md:inline">LIVE DEMO</span>
+        </button>
+
+        <LiveDemoModal open={liveDemoOpen} onClose={() => setLiveDemoOpen(false)} />
 
         <Link
           href={runBatchHref}

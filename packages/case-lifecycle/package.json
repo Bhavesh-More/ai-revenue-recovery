@@ -20,6 +20,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "typescript": "6.0.3"
   },
   "packageManager": "yarn@4.12.0"

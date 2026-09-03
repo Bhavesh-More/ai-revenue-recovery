@@ -30,6 +30,7 @@ import { jobsRouter } from "./routes/jobs.js";
 import { observabilityRouter } from "./routes/observability.js";
 import { metricsRouter } from "./routes/metrics.js";
 import { scenariosRouter } from "./routes/scenarios.js";
+import { liveDemoRouter } from "./routes/live-demo.js";
 
 export interface AppDeps {
   config?: ApiConfig;
@@ -136,6 +137,8 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(metricsRouter);
   app.use(`/api/${config.version}`, scenariosRouter);
   app.use(scenariosRouter);
+  app.use(`/api/${config.version}`, liveDemoRouter);
+  app.use(liveDemoRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -4,7 +4,9 @@ import { db } from "@recovery/db";
 import { batches, recoveryCases } from "@recovery/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { RecoveryMetricsCalculator } from "@recovery/case-lifecycle";
+import { batchSimulator } from "@recovery/agent";
 import { asyncHandler } from "../lib/async-handler.js";
+
 import { ok, created } from "../lib/responses.js";
 import { ApiError } from "../lib/errors.js";
 
@@ -36,6 +38,33 @@ const createBatchSchema = z.object({
   name: z.string().min(1).max(255),
   directions: z.array(recoveryDirection).optional(),
   caseIds: z.array(z.string().uuid()).optional(),
+  batchName: z.string().optional(),
+  generationMode: z.enum(["single", "mixed"]).optional(),
+  singleDirection: z.string().optional(),
+  numberOfCases: z.number().int().min(1).max(10000).optional(),
+  dateRangePreset: z.enum(["24h", "7d", "30d", "custom"]).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  minAmount: z.number().min(1).optional(),
+  maxAmount: z.number().min(1).optional(),
+  customerContext: z
+    .object({
+      behavioralHistory: z.boolean().optional(),
+      multiChannelTouchpoints: z.boolean().optional(),
+      riskTelemetry: z.boolean().optional(),
+    })
+    .optional(),
+  edgeCases: z
+    .object({
+      hardshipClaims: z.boolean().optional(),
+      highExposureOverrides: z.boolean().optional(),
+      repeatedDegradationSurge: z.boolean().optional(),
+      disputedCharges: z.boolean().optional(),
+    })
+    .optional(),
+  generateGroundTruth: z.boolean().optional(),
+  randomSeed: z.number().optional(),
+  enableSimulation: z.boolean().optional(),
 });
 
 /**
@@ -86,12 +115,38 @@ metricsRouter.get(
 
 /**
  * POST /api/v1/batches
- * Create a new evaluation batch.
+ * Create and optionally simulate a new evaluation batch.
  */
 metricsRouter.post(
   "/batches",
   asyncHandler(async (req, res) => {
     const input = createBatchSchema.parse(req.body);
+
+    // If synthetic generation or simulation is requested (default for UI batch creation)
+    if (input.numberOfCases || input.generationMode || input.edgeCases || input.minAmount || (input.caseIds?.length ?? 0) === 0) {
+      const result = await batchSimulator.generateAndSimulateBatch({
+        batchName: input.batchName || input.name,
+        generationMode: input.generationMode ?? "mixed",
+        singleDirection: input.singleDirection,
+        numberOfCases: input.numberOfCases ?? 100,
+        dateRangePreset: input.dateRangePreset,
+        minAmount: input.minAmount,
+        maxAmount: input.maxAmount,
+        customerContext: input.customerContext,
+        edgeCases: input.edgeCases,
+        generateGroundTruth: input.generateGroundTruth,
+        randomSeed: input.randomSeed,
+        enableSimulation: input.enableSimulation !== false,
+      });
+
+      created(res, {
+        ...result.batch,
+        metrics: result.metrics,
+        activity: result.activity,
+      });
+      return;
+    }
+
     let targetCaseIds = input.caseIds ?? [];
 
     // If caseIds not provided explicitly, auto-attach cases matching direction filter
@@ -131,7 +186,7 @@ metricsRouter.post(
 
 /**
  * POST /api/v1/batches/:id/evaluate
- * Evaluate a specific batch and persist metric snapshot.
+ * Evaluate a specific batch and return metric snapshot & activity timeline.
  */
 metricsRouter.post(
   "/batches/:id/evaluate",
@@ -147,10 +202,16 @@ metricsRouter.post(
       throw ApiError.notFound("BATCH_NOT_FOUND", `Batch ${batchId} not found.`);
     }
 
-    const result = await metricsCalculator.evaluateBatch(batchId);
-    ok(res, result);
+    try {
+      const evaluation = await batchSimulator.getBatchEvaluation(batchId);
+      ok(res, evaluation);
+    } catch {
+      const result = await metricsCalculator.evaluateBatch(batchId);
+      ok(res, result);
+    }
   }),
 );
+
 
 /**
  * GET /api/v1/batches/:id/metrics

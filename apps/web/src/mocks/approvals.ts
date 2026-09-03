@@ -13,7 +13,9 @@ export type ApprovalDirection =
   | 'Payment Degradation'
   | 'Checkout Recovery'
   | 'Mandate Retry'
-  | 'Promise-to-Pay';
+  | 'Promise-to-Pay'
+  | string;
+
 
 export type ApprovalFilter = 'all' | 'high-risk' | 'subscription' | 'b2b';
 

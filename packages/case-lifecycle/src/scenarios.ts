@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import {
   customers,
@@ -183,7 +184,7 @@ export const DEMO_SCENARIOS: DemoScenarioDefinition[] = [
       phone: "+919822233344",
     },
     event: {
-      eventType: "mandate.debit_failed",
+      eventType: "mandate.failed",
       amountMinor: 500000, // ₹5,000
       currency: "INR",
       payload: {
@@ -213,7 +214,7 @@ export const DEMO_SCENARIOS: DemoScenarioDefinition[] = [
       phone: "+919833344455",
     },
     event: {
-      eventType: "loan_emi.overdue",
+      eventType: "voice.call_completed",
       amountMinor: 3500000, // ₹35,000
       currency: "INR",
       payload: {
@@ -249,7 +250,7 @@ export const DEMO_SCENARIOS: DemoScenarioDefinition[] = [
       phone: "+919844455566",
     },
     event: {
-      eventType: "payment.commitment_made",
+      eventType: "promise.created",
       amountMinor: 7500000, // ₹75,000
       currency: "INR",
       payload: {
@@ -303,9 +304,10 @@ export class DemoScenarioGenerator {
       .insert(revenueEvents)
       .values({
         customerId: cust.id,
-        eventType: spec.event.eventType,
-        direction: spec.direction,
-        amountMinor: BigInt(spec.event.amountMinor),
+        type: spec.event.eventType,
+        source: "demo_scenario_generator",
+        externalId: `demo_${spec.key}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        amountAtRiskMinor: spec.event.amountMinor,
         currency: spec.event.currency,
         payload: spec.event.payload,
       })
@@ -333,13 +335,18 @@ export class DemoScenarioGenerator {
       .returning();
 
     // 4. Create Agent Decision record
+    const runId = crypto.randomUUID();
     await this.db.insert(agentDecisions).values({
       caseId: recCase.id,
-      selectedAction: "ACTION_PROPOSED",
-      rationale: spec.caseData.decisionSummary,
-      confidenceScore: spec.caseData.recoveryProbability.toFixed(3),
-      riskScore: "0.250",
+      runId,
+      type: "analyze",
       status: "approved",
+      rootCause: spec.caseData.decisionSummary,
+      recommendation: {
+        actionType: "send_payment_link",
+        rationale: spec.caseData.decisionSummary,
+      },
+      policyResult: { decision: "allow" },
     });
 
     // 5. Create Audit Event
@@ -362,11 +369,11 @@ export class DemoScenarioGenerator {
       await this.db.insert(promises).values({
         caseId: recCase.id,
         customerId: cust.id,
-        promisedAmountMinor: BigInt(spec.promiseData.promisedMinor),
+        amountMinor: spec.promiseData.promisedMinor,
         currency: spec.event.currency,
         promisedDate: new Date(spec.promiseData.promiseDateISO),
-        status: "active",
-        notes: spec.promiseData.notes,
+        status: "pending",
+        conditions: spec.promiseData.notes,
       });
     }
 

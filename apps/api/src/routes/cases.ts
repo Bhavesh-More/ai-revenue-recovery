@@ -6,12 +6,15 @@ import {
   CaseNotFoundError,
   InvalidStateTransitionError,
 } from "@recovery/case-lifecycle";
+import { batchSimulator } from "@recovery/agent";
 import { ApiError } from "../lib/errors.js";
+
 import { asyncHandler } from "../lib/async-handler.js";
 import { created, ok, collection } from "../lib/responses.js";
 import { razorpayClient } from "@recovery/integrations";
 import { auditService } from "@recovery/audit";
 import { eventBroadcaster } from "../lib/broadcaster.js";
+
 
 const recoveryDirection = z.enum([
   "01_payment_degradation",
@@ -283,4 +286,66 @@ casesRouter.post(
     });
   }),
 );
+
+casesRouter.post(
+  "/cases/:id/approve-simulation",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const actor = typeof req.body?.actor === "string" ? req.body.actor : "operator";
+    try {
+      const row = await batchSimulator.approveAndSimulateCase(id, actor);
+      eventBroadcaster.broadcast("case.updated", row);
+      ok(res, row);
+    } catch (err) {
+      mapDomainError(err);
+    }
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/reject-simulation",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const actor = typeof req.body?.actor === "string" ? req.body.actor : "operator";
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "Declined by supervisor";
+    try {
+      const row = await batchSimulator.rejectCaseSimulation(id, actor, reason);
+      eventBroadcaster.broadcast("case.updated", row);
+      ok(res, row);
+    } catch (err) {
+      mapDomainError(err);
+    }
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/settle-simulation",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const actor = typeof req.body?.actor === "string" ? req.body.actor : "operator";
+    try {
+      const row = await batchSimulator.approveAndSimulateCase(id, actor);
+      eventBroadcaster.broadcast("case.updated", row);
+      ok(res, row);
+    } catch (err) {
+      mapDomainError(err);
+    }
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/advance-simulation",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const actor = typeof req.body?.actor === "string" ? req.body.actor : "operator";
+    try {
+      const row = await batchSimulator.advanceCaseSimulation(id, actor);
+      eventBroadcaster.broadcast("case.updated", row);
+      ok(res, row);
+    } catch (err) {
+      mapDomainError(err);
+    }
+  }),
+);
+
 

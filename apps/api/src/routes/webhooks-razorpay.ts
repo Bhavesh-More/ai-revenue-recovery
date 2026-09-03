@@ -11,7 +11,7 @@ import { eventBroadcaster } from "../lib/broadcaster.js";
 export const webhooksRazorpayRouter = Router();
 
 webhooksRazorpayRouter.post(
-  "/webhooks/razorpay",
+  ["/webhooks/razorpay", "/"],
   asyncHandler(async (req, res) => {
     const signature = (req.headers["x-razorpay-signature"] as string) || "";
     const rawBody =
@@ -140,20 +140,53 @@ webhooksRazorpayRouter.post(
       eventType === "invoice.paid";
 
     if (isSuccessEvent && (paymentEntity || linkEntity)) {
-      const refCaseId = linkEntity?.notes?.caseId || paymentEntity?.description || paymentEntity?.id;
+      const refCaseId =
+        (linkEntity?.notes as any)?.caseId ||
+        linkEntity?.reference_id ||
+        (paymentEntity as any)?.notes?.caseId;
 
       if (refCaseId) {
         try {
-          const updated = await caseLifecycle.transition({
-            caseId: refCaseId,
-            toState: "recovered",
-            reason: `Razorpay webhook confirmed settlement (${eventType})`,
-            actor: "razorpay:webhook",
-          });
-          caseIdHandled = updated.id;
+          const amountMinor = Number(paymentEntity?.amount || linkEntity?.amount || 0);
+          if (amountMinor > 0) {
+            const updated = await caseLifecycle.recordOutcome({
+              caseId: refCaseId,
+              recoveredMinor: amountMinor,
+              reason: `Razorpay webhook confirmed settlement (${eventType})`,
+              actor: "razorpay:webhook",
+            });
+            caseIdHandled = updated.id;
+
+            // Record specific Razorpay payment audit event
+            await auditService.record({
+              caseId: caseIdHandled,
+              action: "outcome_received",
+              summary: `Razorpay TEST payment captured. Amount: ${amountMinor} minor units.`,
+              detail: {
+                lifecycleEvent: "RAZORPAY_PAYMENT_RECEIVED",
+                event: eventType,
+                paymentId: paymentEntity?.id || null,
+                linkId: linkEntity?.id || null,
+                amountMinor,
+                method: paymentEntity?.method || null,
+                currency: paymentEntity?.currency || linkEntity?.currency || "INR",
+              },
+              actor: "system:razorpay_webhook",
+            });
+          } else {
+            const updated = await caseLifecycle.transition({
+              caseId: refCaseId,
+              toState: "recovered",
+              reason: `Razorpay webhook confirmed settlement (${eventType})`,
+              actor: "razorpay:webhook",
+            });
+            caseIdHandled = updated.id;
+          }
         } catch {
-          // Ignore if caseId is external or not found in local memory/DB
+          // Ignore if caseId is external or not found in local DB
         }
+      } else {
+        console.warn(`[Webhook] Unmatched payment success event (${eventType}): no caseId found in notes/reference_id. PaymentId=${paymentEntity?.id || "N/A"}, LinkId=${linkEntity?.id || "N/A"}`);
       }
     }
 

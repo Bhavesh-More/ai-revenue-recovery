@@ -1,14 +1,39 @@
 'use client';
 
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { RecoveryCaseDetail } from '../../mocks/recoveryCaseDetails';
 import { formatIndianCurrency, StatusBadge } from './RecoveryCasesTable';
+import { advanceSimulationCase, approveSimulationCase } from '../../lib/api';
 
 export interface CaseHeaderCardProps {
   caseDetail: RecoveryCaseDetail;
+  onRefresh?: () => void;
 }
 
-export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
+export function CaseHeaderCard({ caseDetail, onRefresh }: CaseHeaderCardProps) {
+  const [advancing, setAdvancing] = useState(false);
+
+  const handleAdvance = async () => {
+    if (advancing) return;
+    setAdvancing(true);
+    try {
+      if (caseDetail.status === 'Escalated') {
+        await approveSimulationCase(caseDetail.id, 'operator');
+      } else {
+        await advanceSimulationCase(caseDetail.id, 'operator');
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('recovery:data-updated'));
+      }
+      onRefresh?.();
+    } catch (err) {
+      console.error('Failed to advance case simulation:', err);
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
   const getRiskColor = () => {
     switch (caseDetail.risk) {
       case 'Critical':
@@ -52,19 +77,64 @@ export function CaseHeaderCard({ caseDetail }: CaseHeaderCardProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {caseDetail.status === 'Waiting' && (
+              <button
+                type="button"
+                onClick={handleAdvance}
+                disabled={advancing}
+                className="px-4 py-2 bg-[#00B074] text-white rounded-lg text-sm font-bold hover:bg-[#009663] transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                <Icon
+                  icon={advancing ? 'lucide:loader-2' : 'lucide:zap'}
+                  className={`text-base ${advancing ? 'animate-spin' : ''}`}
+                />
+                <span>{advancing ? 'Executing Retry...' : 'Execute Scheduled Retry'}</span>
+              </button>
+            )}
+
+            {caseDetail.status === 'Cust Action' && (caseDetail as any).batchId && (
+              <button
+                type="button"
+                onClick={handleAdvance}
+                disabled={advancing}
+                className="px-4 py-2 bg-[#3B82F6] text-white rounded-lg text-sm font-bold hover:bg-[#2563EB] transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                <Icon
+                  icon={advancing ? 'lucide:loader-2' : 'lucide:send'}
+                  className={`text-base ${advancing ? 'animate-spin' : ''}`}
+                />
+                <span>{advancing ? 'Simulating...' : 'Simulate Customer Payment'}</span>
+              </button>
+            )}
+
+            {caseDetail.status === 'Cust Action' && !(caseDetail as any).batchId && (
+              <div className="px-4 py-2 bg-[#F0F9FF] dark:bg-[#0C2D48] border border-[#BAE6FD] dark:border-[#1E3A5F] rounded-lg text-sm font-bold text-[#0369A1] dark:text-[#7DD3FC] flex items-center gap-2">
+                <Icon icon="lucide:clock" className="text-base" />
+                <span>Awaiting Razorpay TEST Payment</span>
+              </div>
+            )}
+
+            {caseDetail.status === 'Escalated' && (
+              <button
+                type="button"
+                onClick={handleAdvance}
+                disabled={advancing}
+                className="px-4 py-2 bg-[#F59E0B] text-white rounded-lg text-sm font-bold hover:bg-[#D97706] transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                <Icon
+                  icon={advancing ? 'lucide:loader-2' : 'lucide:check-circle'}
+                  className={`text-base ${advancing ? 'animate-spin' : ''}`}
+                />
+                <span>{advancing ? 'Authorizing...' : 'Authorize Action'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               className="px-4 py-2 bg-white dark:bg-[#171819] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-lg text-sm font-bold text-[#1A1A1A] dark:text-[#F9FAFB] hover:bg-gray-50 dark:hover:bg-[#131416] transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <Icon icon="lucide:download" className="text-base" />
               <span>Export</span>
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] rounded-lg text-sm font-bold hover:bg-black transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-            >
-              <Icon icon="lucide:message-square" className="text-base" />
-              <span>Contact</span>
             </button>
           </div>
         </div>

@@ -271,11 +271,60 @@ export function reasonNode(deps: ReasonDeps) {
       }
     }
 
-    const output = await deps.reasoner.reason({
-      caseId: state.caseId,
-      direction: caseRow.direction,
-      facts: state.observations ?? [],
-    });
+    let output;
+    try {
+      output = await deps.reasoner.reason({
+        caseId: state.caseId,
+        direction: caseRow.direction,
+        facts: state.observations ?? [],
+      });
+    } catch (err: any) {
+      await auditService.record({
+        caseId: state.caseId,
+        action: "decision_failed",
+        summary: `LLM reasoning failed or timed out (${err.message || String(err)}). Engaging deterministic fallback.`,
+        detail: {
+          runId: state.runId,
+          decisionType: type,
+          error: err.message || String(err),
+        },
+        actor: "agent:reason",
+      });
+
+      // Deterministic analyzer fallback for the direction
+      const fallbackAnalysis =
+        caseRow.direction === "01_payment_degradation"
+          ? reasonOverPaymentDegradationFacts(state.observations ?? [])
+          : caseRow.direction === "02_checkout_dropoff"
+          ? reasonOverCheckoutDropoffFacts(state.observations ?? [])
+          : caseRow.direction === "03_failed_subscription"
+          ? reasonOverSubscriptionRecoveryFacts(state.observations ?? [])
+          : caseRow.direction === "04_b2b_receivables"
+          ? reasonOverB2BReceivablesFacts(state.observations ?? [])
+          : caseRow.direction === "05_mandate_retry"
+          ? reasonOverMandateRetryFacts(state.observations ?? [])
+          : caseRow.direction === "06_hinglish_voice"
+          ? reasonOverHinglishVoiceFacts(state.observations ?? [])
+          : reasonOverPromiseTrackerFacts(state.observations ?? []);
+
+      if (fallbackAnalysis) {
+        return {
+          phase: "reasoned",
+          rootCause: fallbackAnalysis.rootCause,
+          recommendation: fallbackAnalysis.recommendation,
+          observations: fallbackAnalysis.observations,
+        };
+      }
+
+      return {
+        phase: "failed",
+        error: {
+          code: "AGENT_ERROR",
+          message: `LLM reasoner failed: ${err.message || String(err)}`,
+          node: "reason",
+        },
+      };
+    }
 
     const parsed = agentReasonerOutputSchema.safeParse(output);
     if (!parsed.success) {

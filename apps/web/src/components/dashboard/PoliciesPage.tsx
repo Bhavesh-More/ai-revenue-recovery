@@ -14,7 +14,7 @@ import { GlobalRecoveryLimits } from './GlobalRecoveryLimits';
 import { EscalationRules } from './EscalationRules';
 import { DirectionPolicyCard } from './DirectionPolicyCard';
 import { DirectionPolicyEditor } from './DirectionPolicyEditor';
-import { fetchPolicies } from '../../lib/api';
+import { fetchPolicies, fetchMetrics } from '../../lib/api';
 
 export function PoliciesPage() {
   const [config, setConfig] = useState<FullPolicyConfig>(INITIAL_POLICIES_DATA);
@@ -23,9 +23,63 @@ export function PoliciesPage() {
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
-    fetchPolicies()
-      .then((apiPolicies) => {
+    Promise.all([
+      fetchPolicies().catch(() => []),
+      fetchMetrics().catch(() => null),
+    ])
+      .then(([apiPolicies, m]) => {
         if (Array.isArray(apiPolicies) && apiPolicies.length > 0) {
+          const primaryPolicy = apiPolicies[0] as any;
+          const limits = primaryPolicy?.limits || {};
+          const maxRetries = limits.retry?.maxPaymentRetries ?? 3;
+          const maxComms = limits.communication?.maxMessages ?? 4;
+          const thresholdMinor = Number(primaryPolicy?.highValueApprovalThresholdMinor || 50000000);
+          const activeCasesCount = m?.activeCases ?? 200;
+
+          setConfig((prev) => ({
+            ...prev,
+            metadata: {
+              systemStatus: primaryPolicy.enabled ? 'Active & Enforcing' : 'Inactive',
+              lastUpdated: new Date(primaryPolicy.updatedAt || Date.now()).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+              appliedAcross: `${activeCasesCount} Active Cases`,
+              modifiedBy: {
+                name: primaryPolicy.updatedBy || 'Admin User',
+                email: 'admin@razorpay.com',
+                initials: 'AU',
+              },
+            },
+            globalLimits: {
+              maxAutomaticRetries: {
+                value: maxRetries,
+                enabled: true,
+              },
+              maxCommunications: {
+                value: maxComms,
+                enabled: true,
+              },
+              defaultRetryInterval: {
+                value: '24 Hours',
+                enabled: true,
+              },
+            },
+            escalationRules: {
+              highValueThreshold: {
+                value: Math.round(thresholdMinor / 100),
+                enabled: true,
+              },
+              criticalRiskThreshold: {
+                value: 75,
+                enabled: true,
+              },
+              humanApprovalRequired: {
+                enabled: true,
+                strict: true,
+              },
+            },
+          }));
           setIsLive(true);
         }
       })
@@ -105,7 +159,7 @@ export function PoliciesPage() {
                   : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20'
               }`}
             >
-              {isLive ? 'Live Policy Engine' : 'Sandbox Demo Baseline'}
+              {isLive ? 'Live Policy Engine' : 'Connecting...'}
             </span>
           </div>
           <p className="text-sm text-[#4A4A4A] dark:text-[#9CA3AF]">

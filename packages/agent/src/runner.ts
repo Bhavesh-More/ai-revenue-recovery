@@ -194,8 +194,8 @@ export class AgentRunner {
 
       await caseLifecycle.transition({
         caseId: decision.caseId,
-        toState: "failed",
-        reason: input.reason ?? "Decision rejected",
+        toState: "stopped",
+        reason: input.reason ?? "Decision rejected by human supervisor",
         actor: input.actor,
       });
     }

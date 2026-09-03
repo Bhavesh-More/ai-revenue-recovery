@@ -5,6 +5,7 @@ import { DemoScenarioGenerator, DEMO_SCENARIOS } from "@recovery/case-lifecycle"
 import { asyncHandler } from "../lib/async-handler.js";
 import { ok, created } from "../lib/responses.js";
 import { ApiError } from "../lib/errors.js";
+import { eventBroadcaster } from "../lib/broadcaster.js";
 
 export const scenariosRouter = Router();
 const generator = new DemoScenarioGenerator(db);
@@ -34,10 +35,15 @@ scenariosRouter.get(
 scenariosRouter.post(
   "/scenarios/seed",
   asyncHandler(async (req, res) => {
-    const { scenarioKey } = seedSchema.parse(req.body);
+    const { scenarioKey } = seedSchema.parse(req.body ?? {});
 
     if (scenarioKey === "all") {
       const result = await generator.seedAll();
+      eventBroadcaster.emit("event", {
+        type: "case.created",
+        timestamp: new Date().toISOString(),
+        data: { seededCount: result.seededCount },
+      });
       created(res, {
         message: "Successfully seeded all 7 demo scenarios.",
         seededCount: result.seededCount,
@@ -48,6 +54,11 @@ scenariosRouter.post(
 
     try {
       const result = await generator.seedScenario(scenarioKey);
+      eventBroadcaster.emit("event", {
+        type: "case.created",
+        timestamp: new Date().toISOString(),
+        data: { scenarioKey, caseId: result.case.id },
+      });
       created(res, {
         message: `Successfully seeded demo scenario '${scenarioKey}'.`,
         customer: result.customer,
