@@ -81,6 +81,15 @@ export class RazorpayClient {
       };
     }
 
+    // Razorpay standard payment links have a maximum transaction limit of ₹5,00,000 (50,000,000 paise).
+    // For high-value enterprise cases, cap to platform limit so creation succeeds.
+    const MAX_RZP_LINK_AMOUNT_MINOR = 50_000_000;
+    const effectiveAmount = Math.min(input.amountMinor, MAX_RZP_LINK_AMOUNT_MINOR);
+    const effectiveDescription =
+      input.amountMinor > MAX_RZP_LINK_AMOUNT_MINOR
+        ? `${input.description || 'Payment Link'} (Tranche 1 - capped at ₹5L link limit)`
+        : input.description;
+
     const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
     const response = await fetch(`${this.baseUrl}/payment_links`, {
       method: 'POST',
@@ -89,10 +98,10 @@ export class RazorpayClient {
         Authorization: `Basic ${auth}`,
       },
       body: JSON.stringify({
-        amount: input.amountMinor,
+        amount: effectiveAmount,
         currency: input.currency || 'INR',
         accept_partial: false,
-        description: input.description,
+        description: effectiveDescription,
         customer: input.customer,
         reference_id: input.referenceId,
         expire_by: input.expireBy,
@@ -108,6 +117,49 @@ export class RazorpayClient {
     }
 
     return (await response.json()) as RazorpayPaymentLink;
+  }
+
+  public async fetchPaymentLink(linkId: string): Promise<any> {
+    if (this.isMockMode()) {
+      return {
+        id: linkId,
+        entity: 'payment_link',
+        status: 'created',
+        amount: 149900,
+        amount_paid: 0,
+      };
+    }
+
+    const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    const response = await fetch(`${this.baseUrl}/payment_links/${linkId}`, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Razorpay API error (${response.status}): ${errorText}`);
+    }
+
+    return await response.json();
+  }
+
+  public async fetchPaymentsForLink(linkId: string): Promise<any[]> {
+    if (this.isMockMode()) {
+      return [];
+    }
+    const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    const response = await fetch(`${this.baseUrl}/payments?payment_link_id=${linkId}`, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    });
+    if (!response.ok) {
+      return [];
+    }
+    const data = (await response.json()) as any;
+    return data.items || [];
   }
 
   public async fetchPayment(paymentId: string): Promise<RazorpayPaymentDetails> {

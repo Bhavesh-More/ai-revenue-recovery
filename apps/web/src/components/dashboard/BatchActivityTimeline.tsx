@@ -53,11 +53,22 @@ export function BatchActivityTimeline({
       {/* Timeline Event List */}
       <div className="p-6 overflow-y-auto flex-1 scrollbar-hide min-h-0">
         <div className="space-y-6">
-          {activity.map((event, index) => {
-            const isLast = index === activity.length - 1;
+          {activity.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Icon icon="lucide:loader-2" className="text-[#3B82F6] animate-spin text-2xl mb-2" />
+              <p className="text-xs font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+                Awaiting Case Activity
+              </p>
+              <p className="text-[11px] text-[#8C8C8C] dark:text-[#6B7280] mt-1">
+                Each batch case will stream here live as it is ingested and evaluated.
+              </p>
+            </div>
+          ) : (
+            activity.map((event, index) => {
+              const isLast = index === activity.length - 1;
 
-            return (
-              <div key={event.id} className="flex gap-4">
+              return (
+                <div key={event.id || index} className="flex gap-4">
                 {/* Node & Line */}
                 <div className="flex flex-col items-center">
                   <div
@@ -100,7 +111,8 @@ export function BatchActivityTimeline({
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
     </div>

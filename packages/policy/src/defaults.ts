@@ -8,8 +8,8 @@ import type {
 
 export const DEFAULT_POLICY_NAME = "Default Recovery Policy";
 
-// ₹500,000.00 in paise = 50,000,000 minor units (bigint for safe DB write).
-export const DEFAULT_HIGH_VALUE_APPROVAL_THRESHOLD_MINOR = 50_000_000n;
+// ₹50,000.00 in paise = 5,000,000 minor units (bigint for safe DB write).
+export const DEFAULT_HIGH_VALUE_APPROVAL_THRESHOLD_MINOR = 5_000_000n;
 
 export const DEFAULT_RETRY_LIMITS: RetryLimits = {
   maxPaymentRetries: 3,

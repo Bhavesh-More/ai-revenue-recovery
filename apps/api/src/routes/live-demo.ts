@@ -9,7 +9,7 @@ import { auditService } from "@recovery/audit";
 import { agentRunner } from "@recovery/agent";
 import { emailClient, generateRecoveryEmail, razorpayClient } from "@recovery/integrations";
 import { asyncHandler } from "../lib/async-handler.js";
-import { ok } from "../lib/responses.js";
+import { ok, jsonSafe } from "../lib/responses.js";
 import { eventBroadcaster } from "../lib/broadcaster.js";
 
 export const liveDemoRouter = Router();
@@ -299,17 +299,19 @@ liveDemoRouter.post(
     // If case failed during execution (e.g. tool failure), do NOT pretend email succeeded
     if (freshCase.currentState === "failed") {
       eventBroadcaster.broadcast("case.updated", freshCase);
-      return res.status(422).json({
-        error: {
-          code: "ACTION_EXECUTION_FAILED",
-          message: freshCase.outcomeReason || "AI recovery action execution failed.",
-        },
-        case: freshCase,
-        decision: latestDecision,
-        status: "failed",
-        approvalRequired: false,
-        emailSent: false,
-      });
+      return res.status(422).json(
+        jsonSafe({
+          error: {
+            code: "ACTION_EXECUTION_FAILED",
+            message: freshCase.outcomeReason || "AI recovery action execution failed.",
+          },
+          case: freshCase,
+          decision: latestDecision,
+          status: "failed",
+          approvalRequired: false,
+          emailSent: false,
+        }),
+      );
     }
 
     const policyDecision = (latestDecision?.policyResult as any)?.decision || "allow";
@@ -339,13 +341,20 @@ liveDemoRouter.post(
 
     // 8. Policy Allowed: Create Razorpay TEST Payment Link + Send Real Email via Resend
 
-    // 8a. Create Razorpay TEST payment link
+    // 8a. Create Razorpay TEST payment link (capped at ₹5,00,000 max link ceiling)
+    const MAX_RZP_LINK_AMOUNT_MINOR = 50_000_000;
+    const linkAmountMinor = Math.min(amountMinor, MAX_RZP_LINK_AMOUNT_MINOR);
+    const linkDesc =
+      amountMinor > MAX_RZP_LINK_AMOUNT_MINOR
+        ? `Recovery: ${input.direction} — ${input.customer.name} (Tranche 1 - capped at ₹5L link limit)`
+        : `Recovery: ${input.direction} — ${input.customer.name}`;
+
     let paymentLink: any;
     try {
       paymentLink = await razorpayClient.createPaymentLink({
-        amountMinor,
+        amountMinor: linkAmountMinor,
         currency: "INR",
-        description: `Recovery: ${input.direction} — ${input.customer.name}`,
+        description: linkDesc,
         customer: {
           name: input.customer.name,
           email: input.customer.email,
@@ -405,17 +414,19 @@ liveDemoRouter.post(
 
       eventBroadcaster.broadcast("case.updated", failedCase);
 
-      return res.status(422).json({
-        error: {
-          code: "PAYMENT_LINK_CREATION_FAILED",
-          message: errorMsg,
-        },
-        case: failedCase,
-        decision: latestDecision,
-        status: failedCase.currentState,
-        approvalRequired: false,
-        emailSent: false,
-      });
+      return res.status(422).json(
+        jsonSafe({
+          error: {
+            code: "PAYMENT_LINK_CREATION_FAILED",
+            message: errorMsg,
+          },
+          case: failedCase,
+          decision: latestDecision,
+          status: failedCase.currentState,
+          approvalRequired: false,
+          emailSent: false,
+        }),
+      );
     }
 
     // 8b. Record successful payment link creation
@@ -514,23 +525,25 @@ liveDemoRouter.post(
       // Payment link was created but email failed — case stays in action_selected/waiting
       eventBroadcaster.broadcast("case.updated", freshCase);
 
-      return res.status(422).json({
-        error: {
-          code: "EMAIL_DELIVERY_FAILED",
-          message: errorMsg,
-        },
-        case: freshCase,
-        decision: latestDecision,
-        status: freshCase.currentState,
-        approvalRequired: false,
-        emailSent: false,
-        emailResult,
-        paymentLink: {
-          id: paymentLink.id,
-          shortUrl: paymentLink.short_url,
-          status: "created",
-        },
-      });
+      return res.status(422).json(
+        jsonSafe({
+          error: {
+            code: "EMAIL_DELIVERY_FAILED",
+            message: errorMsg,
+          },
+          case: freshCase,
+          decision: latestDecision,
+          status: freshCase.currentState,
+          approvalRequired: false,
+          emailSent: false,
+          emailResult,
+          paymentLink: {
+            id: paymentLink.id,
+            shortUrl: paymentLink.short_url,
+            status: "created",
+          },
+        }),
+      );
     }
 
     // Email Succeeded (Accepted by Resend)
@@ -689,17 +702,23 @@ liveDemoRouter.post(
       });
     } catch {}
 
-    // 4. Create Razorpay TEST Payment Link
+    // 4. Create Razorpay TEST Payment Link (capped at ₹5,00,000 max link ceiling)
     const amountMinor = Number(caseRow.amountAtRiskMinor || 0);
+    const MAX_RZP_LINK_AMOUNT_MINOR = 50_000_000;
+    const linkAmountMinor = Math.min(amountMinor, MAX_RZP_LINK_AMOUNT_MINOR);
+    const linkDesc =
+      amountMinor > MAX_RZP_LINK_AMOUNT_MINOR
+        ? `Recovery: ${caseRow.direction} — ${customer?.name || "Customer"} (Tranche 1 - capped at ₹5L link limit)`
+        : `Recovery: ${caseRow.direction} — ${customer?.name || "Customer"}`;
     const amountRs = Math.round(amountMinor / 100);
     const targetEmail = customer?.email || "customer@example.com";
 
     let paymentLink: any;
     try {
       paymentLink = await razorpayClient.createPaymentLink({
-        amountMinor,
+        amountMinor: linkAmountMinor,
         currency: "INR",
-        description: `Recovery: ${caseRow.direction} — ${customer?.name || "Customer"}`,
+        description: linkDesc,
         customer: {
           name: customer?.name || "Valued Customer",
           email: targetEmail,
@@ -759,17 +778,19 @@ liveDemoRouter.post(
 
       eventBroadcaster.broadcast("case.updated", failedCase);
 
-      return res.status(422).json({
-        error: {
-          code: "PAYMENT_LINK_CREATION_FAILED",
-          message: errorMsg,
-        },
-        case: failedCase,
-        decision: latestDecision,
-        status: failedCase.currentState,
-        approvalRequired: false,
-        emailSent: false,
-      });
+      return res.status(422).json(
+        jsonSafe({
+          error: {
+            code: "PAYMENT_LINK_CREATION_FAILED",
+            message: errorMsg,
+          },
+          case: failedCase,
+          decision: latestDecision,
+          status: failedCase.currentState,
+          approvalRequired: false,
+          emailSent: false,
+        }),
+      );
     }
 
     // 4b. Record successful payment link creation
@@ -865,23 +886,25 @@ liveDemoRouter.post(
       // Payment link was created but email failed
       eventBroadcaster.broadcast("case.updated", caseRow);
 
-      return res.status(422).json({
-        error: {
-          code: "EMAIL_DELIVERY_FAILED",
-          message: errorMsg,
-        },
-        case: caseRow,
-        decision: latestDecision,
-        status: caseRow.currentState,
-        approvalRequired: false,
-        emailSent: false,
-        emailResult,
-        paymentLink: {
-          id: paymentLink.id,
-          shortUrl: paymentLink.short_url,
-          status: "created",
-        },
-      });
+      return res.status(422).json(
+        jsonSafe({
+          error: {
+            code: "EMAIL_DELIVERY_FAILED",
+            message: errorMsg,
+          },
+          case: caseRow,
+          decision: latestDecision,
+          status: caseRow.currentState,
+          approvalRequired: false,
+          emailSent: false,
+          emailResult,
+          paymentLink: {
+            id: paymentLink.id,
+            shortUrl: paymentLink.short_url,
+            status: "created",
+          },
+        }),
+      );
     }
 
     // 6. Record Successful Recovery Action

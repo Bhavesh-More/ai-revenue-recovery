@@ -9,6 +9,7 @@ import { CaseDetailPage } from '../../../components/dashboard/CaseDetailPage';
 import {
   fetchCaseDetail,
   fetchAuditLog,
+  syncCaseRazorpay,
   ApiCase,
   ApiAuditLog,
 } from '../../../lib/api';
@@ -89,11 +90,18 @@ export default function CaseDetailRoute({ params }: CaseDetailRouteProps) {
 
         const timeline: TimelineEvent[] = (auditLogs || []).map((log) => {
           const lifecycle = (log.detail as any)?.lifecycleEvent;
+          const isFailure =
+            log.action.includes('failed') ||
+            lifecycle === 'PAYMENT_FAILED' ||
+            lifecycle === 'EMAIL_FAILED' ||
+            lifecycle === 'ACTION_FAILED';
           const isSuccess =
-            log.action.includes('recovered') ||
-            log.action.includes('executed') ||
-            lifecycle === 'ACTION_EXECUTED' ||
-            lifecycle === 'CASE_RECOVERED';
+            !isFailure &&
+            (log.action.includes('recovered') ||
+              log.action.includes('executed') ||
+              lifecycle === 'ACTION_EXECUTED' ||
+              lifecycle === 'CASE_RECOVERED' ||
+              lifecycle === 'RAZORPAY_PAYMENT_RECEIVED');
           const isEscalation =
             log.action.includes('escalat') ||
             lifecycle === 'ESCALATION' ||
@@ -119,24 +127,30 @@ export default function CaseDetailRoute({ params }: CaseDetailRouteProps) {
               hour: '2-digit',
               minute: '2-digit',
             }),
-            icon: isSuccess
+            icon: isFailure
+              ? 'lucide:x-circle'
+              : isSuccess
               ? 'lucide:check-circle'
               : isEscalation
               ? 'lucide:alert-triangle'
               : isCheck
               ? 'lucide:shield'
               : 'lucide:activity',
-            iconColor: isSuccess
+            iconColor: isFailure
+              ? 'red'
+              : isSuccess
               ? 'green'
               : isEscalation
               ? 'red'
               : isCheck
               ? 'blue'
               : 'muted',
-            bgClass: isSuccess
+            bgClass: isFailure
+              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600'
+              : isSuccess
               ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600'
               : isEscalation
-              ? 'bg-red-50 dark:bg-red-950/40 text-red-600'
+              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600'
               : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600',
           };
         });
@@ -219,6 +233,28 @@ export default function CaseDetailRoute({ params }: CaseDetailRouteProps) {
 
   useEffect(() => {
     loadCase(true);
+
+    const handleDataUpdated = () => {
+      loadCase(false);
+    };
+
+    window.addEventListener('recovery:data-updated', handleDataUpdated);
+
+    // Auto-poll Razorpay API status every 3.5 seconds to detect live payments or failures on rzp.io
+    const interval = setInterval(async () => {
+      try {
+        const res = await syncCaseRazorpay(caseId);
+        if (res.synced && res.status !== 'customer_action_required') {
+          loadCase(false);
+          window.dispatchEvent(new CustomEvent('recovery:data-updated'));
+        }
+      } catch {}
+    }, 3500);
+
+    return () => {
+      window.removeEventListener('recovery:data-updated', handleDataUpdated);
+      clearInterval(interval);
+    };
   }, [caseId]);
 
   return (

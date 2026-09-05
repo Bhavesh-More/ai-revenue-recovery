@@ -96,15 +96,6 @@ export function Header({
 
         <LiveDemoModal open={liveDemoOpen} onClose={() => setLiveDemoOpen(false)} />
 
-        <Link
-          href={runBatchHref}
-          onClick={onRunBatchClick}
-          className="flex items-center gap-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] px-4 py-2 rounded-lg text-sm font-bold hover:bg-black dark:hover:bg-gray-100 transition-colors shadow-sm cursor-pointer shrink-0"
-        >
-          <Icon icon="lucide:play" className="text-base" />
-          <span>Run Batch</span>
-        </Link>
-
         <button
           type="button"
           onClick={toggleTheme}

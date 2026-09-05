@@ -41,5 +41,3 @@ eventsRouter.get(
     accepted(res, { accepted: true });
   }),
 );
-
-void ok;

@@ -14,10 +14,7 @@ import {
 import { policyService } from "@recovery/policy";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { accepted, collection, ok } from "../lib/responses.js";
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
+import { accepted, collection, jsonSafe, ok, payloadRecord } from "../lib/responses.js";
 
 const openStates = [
   "detected",
@@ -30,14 +27,6 @@ const openStates = [
 ] as const;
 
 const terminalStates = ["recovered", "stopped", "failed"] as const;
-
-function jsonSafe<T>(value: T): JsonValue {
-  return JSON.parse(
-    JSON.stringify(value, (_k, v) =>
-      typeof v === "bigint" ? v.toString() : v,
-    ),
-  ) as JsonValue;
-}
 
 function parse<T>(
   schema: {
@@ -64,13 +53,6 @@ function mapDomainError(err: unknown): never {
     throw ApiError.notFound("CASE_NOT_FOUND", err.message);
   }
   throw err as Error;
-}
-
-function payloadRecord(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return {};
 }
 
 const listQuerySchema = z

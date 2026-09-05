@@ -7,7 +7,6 @@ import { MetricCard } from './MetricCard';
 import { RecoveryByDirection } from './RecoveryByDirection';
 import { RecoveryFunnel } from './RecoveryFunnel';
 import {
-  fetchOverviewStats,
   fetchMetrics,
   fetchAuditLog,
   fetchRecoveryCases,

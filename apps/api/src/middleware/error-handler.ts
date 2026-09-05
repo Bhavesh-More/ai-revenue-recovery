@@ -40,7 +40,6 @@ export function errorHandler(
     return;
   }
 
-  const message = err instanceof Error ? err.message : "Unknown error";
   log.error({ err }, "Unhandled error");
   const body: ApiErrorEnvelope = {
     error: {
@@ -51,6 +50,4 @@ export function errorHandler(
     },
   };
   res.status(500).json(body);
-  // Surface original message to logs
-  void message;
 }

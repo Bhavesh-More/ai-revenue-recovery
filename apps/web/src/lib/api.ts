@@ -113,7 +113,16 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
     });
 
     if (!res.ok) {
-      throw new Error(`API error ${res.status}: ${res.statusText}`);
+      let message = `API error ${res.status}: ${res.statusText}`;
+      try {
+        const errPayload = await res.json();
+        if (errPayload?.error?.message) {
+          message = errPayload.error.message;
+        } else if (errPayload?.message) {
+          message = errPayload.message;
+        }
+      } catch {}
+      throw new Error(message);
     }
 
     const payload = await res.json();
@@ -411,4 +420,56 @@ export function formatCurrencyMinor(minor: number, currency: string = 'INR'): st
     return `₹${(rupees / 100000).toFixed(1)}L`;
   }
   return `₹${rupees.toLocaleString('en-IN')}`;
+}
+
+export async function syncCaseRazorpay(caseId: string): Promise<{
+  synced: boolean;
+  status: string;
+  message: string;
+  case: ApiCase;
+}> {
+  return fetchJson<{
+    synced: boolean;
+    status: string;
+    message: string;
+    case: ApiCase;
+  }>(`/cases/${caseId}/sync-razorpay`, {
+    method: 'POST',
+  });
+}
+
+export async function simulateCasePaymentFailure(
+  caseId: string,
+  reason?: string,
+): Promise<{
+  simulated: boolean;
+  status: string;
+  message: string;
+  case: ApiCase;
+}> {
+  return fetchJson<{
+    simulated: boolean;
+    status: string;
+    message: string;
+    case: ApiCase;
+  }>(`/cases/${caseId}/simulate-payment-failure`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function simulateCasePaymentSuccess(caseId: string): Promise<{
+  simulated: boolean;
+  status: string;
+  message: string;
+  case: ApiCase;
+}> {
+  return fetchJson<{
+    simulated: boolean;
+    status: string;
+    message: string;
+    case: ApiCase;
+  }>(`/cases/${caseId}/simulate-payment-success`, {
+    method: 'POST',
+  });
 }

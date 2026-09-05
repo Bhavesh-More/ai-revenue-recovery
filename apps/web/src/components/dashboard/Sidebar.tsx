@@ -40,7 +40,7 @@ export function Sidebar({
   policiesHref = '/policies',
   auditLogHref = '/audit-log',
   batchesCount = 2,
-  showBatchesBadge = true,
+  showBatchesBadge = false,
   approvalsCount = 12,
   showApprovalsBadge = false,
 }: SidebarProps) {
@@ -100,11 +100,6 @@ export function Sidebar({
           >
             <Icon icon="lucide:layers" className="text-lg" />
             <span className="text-sm font-medium">Batches</span>
-            {showBatchesBadge && (
-              <span className="ml-auto text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF4444]">
-                {batchesCount}
-              </span>
-            )}
           </Link>
           <Link
             href={approvalsHref}

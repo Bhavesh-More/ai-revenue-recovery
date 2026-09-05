@@ -14,10 +14,7 @@
     "@recovery/config": "workspace:*",
     "@recovery/logger": "workspace:*",
     "@recovery/queue": "workspace:*",
-    "bullmq": "^6.2.0",
-    "ioredis": "^6.0.0",
-    "pino": "^9.5.0",
-    "zod": "^4.4.3"
+    "bullmq": "^6.2.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

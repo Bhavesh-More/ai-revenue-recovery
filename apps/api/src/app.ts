@@ -1,3 +1,11 @@
+// Ensure BigInt serialization never throws TypeError: Do not know how to serialize a BigInt
+if (typeof BigInt !== "undefined" && !(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    const num = Number(this);
+    return Number.isSafeInteger(num) ? num : this.toString();
+  };
+}
+
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";

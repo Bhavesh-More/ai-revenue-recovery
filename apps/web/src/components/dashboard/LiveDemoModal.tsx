@@ -343,6 +343,11 @@ export function LiveDemoModal({ open, onClose }: LiveDemoModalProps) {
                       onChange={(e) => setAmount(Number(e.target.value))}
                       className="w-full px-3 py-2 text-xs bg-white dark:bg-[#131416] border border-[#E5E7EB] dark:border-[#2A2B2D] rounded-lg text-[#1A1A1A] dark:text-[#F9FAFB] focus:outline-none focus:border-[#2563EB]"
                     />
+                    {amount >= 50000 && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 block mt-1">
+                        ⚡ Amounts ≥ ₹50,000 trigger supervisor approval policy.{amount > 500000 ? " Razorpay links are capped at ₹5,00,000 per link." : ""}
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -684,12 +689,26 @@ export function LiveDemoModal({ open, onClose }: LiveDemoModalProps) {
                   </span>
                 </div>
                 {result.paymentLink && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-[#8C8C8C]">Payment Link:</span>
-                    <span className="font-bold text-[#10B981] flex items-center gap-1">
+                    <span className="font-bold text-[#10B981] flex items-center gap-1 font-mono text-[11px]">
                       <Icon icon="lucide:check" className="text-xs" />
-                      Created
+                      {result.paymentLink.id}
                     </span>
+                  </div>
+                )}
+                {result.paymentLink?.shortUrl && (
+                  <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#2A2B2D] flex items-center justify-between">
+                    <span className="text-[#8C8C8C]">Live Razorpay Checkout:</span>
+                    <a
+                      href={result.paymentLink.shortUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-md font-bold text-xs inline-flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      <span>Open Payment Link</span>
+                      <Icon icon="lucide:external-link" className="text-xs" />
+                    </a>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -814,14 +833,27 @@ export function LiveDemoModal({ open, onClose }: LiveDemoModalProps) {
               >
                 Run Another Demo
               </button>
-              <button
-                type="button"
-                onClick={handleViewCase}
-                className="px-6 py-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] rounded-lg text-xs font-bold hover:bg-black transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <Icon icon="lucide:arrow-right" className="text-sm" />
-                <span>VIEW RECOVERY CASE</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {result?.paymentLink?.shortUrl && (
+                  <a
+                    href={result.paymentLink.shortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-xs font-bold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    <span>Open Razorpay Checkout</span>
+                    <Icon icon="lucide:external-link" className="text-sm" />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={handleViewCase}
+                  className="px-6 py-2 bg-[#1A1A1A] text-white dark:bg-white dark:text-[#131416] rounded-lg text-xs font-bold hover:bg-black transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <Icon icon="lucide:arrow-right" className="text-sm" />
+                  <span>VIEW RECOVERY CASE</span>
+                </button>
+              </div>
             </div>
           )}
 

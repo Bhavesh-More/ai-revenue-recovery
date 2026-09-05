@@ -24,7 +24,7 @@ export function RunBatchPanel({
   const [singleDirection, setSingleDirection] = useState<string>(
     RECOVERY_DIRECTIONS_OPTIONS[0]
   );
-  const [numberOfCases, setNumberOfCases] = useState(1000);
+  const [numberOfCases, setNumberOfCases] = useState(25);
   const [dateRangePreset, setDateRangePreset] = useState<'24h' | '7d' | '30d' | 'custom'>('7d');
   const [minAmount, setMinAmount] = useState(499);
   const [maxAmount, setMaxAmount] = useState(14999);
@@ -184,8 +184,8 @@ export function RunBatchPanel({
             >
               Number of Cases
             </label>
-            <div className="flex items-center gap-1.5">
-              {[100, 500, 1000, 5000].map((count) => (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[10, 25, 50, 100, 500, 1000].map((count) => (
                 <button
                   key={count}
                   type="button"

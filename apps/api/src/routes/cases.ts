@@ -14,6 +14,9 @@ import { created, ok, collection } from "../lib/responses.js";
 import { razorpayClient } from "@recovery/integrations";
 import { auditService } from "@recovery/audit";
 import { eventBroadcaster } from "../lib/broadcaster.js";
+import { db } from "@recovery/db";
+import { recoveryActions } from "@recovery/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 
 const recoveryDirection = z.enum([
@@ -347,5 +350,255 @@ casesRouter.post(
     }
   }),
 );
+
+casesRouter.post(
+  "/cases/:id/sync-razorpay",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const caseRow = await caseLifecycle.findById(id);
+
+    // Look for latest payment link action
+    const actions = await db
+      .select()
+      .from(recoveryActions)
+      .where(eq(recoveryActions.caseId, id))
+      .orderBy(desc(recoveryActions.createdAt));
+
+    const paymentLinkAction = actions.find(
+      (a: any) => a.type === "send_payment_link" && a.payload?.paymentLinkId,
+    );
+
+    const paymentLinkId = (paymentLinkAction?.payload as any)?.paymentLinkId;
+    if (!paymentLinkId) {
+      return ok(res, {
+        synced: false,
+        status: caseRow.currentState,
+        message: "No Razorpay payment link found for this case.",
+        case: caseRow,
+      });
+    }
+
+    try {
+      const link = await (razorpayClient as any).fetchPaymentLink(paymentLinkId);
+      const payments = await (razorpayClient as any).fetchPaymentsForLink(paymentLinkId);
+
+      const linkPayments = Array.isArray(link?.payments) ? link.payments : [];
+      const directPayments = Array.isArray(payments) ? payments : [];
+      const allPayments = [...linkPayments, ...directPayments];
+
+      // Check if paid
+      const isPaid =
+        link.status === "paid" ||
+        allPayments.some((p: any) => p.status === "captured" || p.status === "paid");
+
+      if (isPaid && caseRow.currentState !== "recovered") {
+        const updated = await caseLifecycle.recordOutcome({
+          caseId: id,
+          recoveredMinor: Number(caseRow.amountAtRiskMinor || 0),
+          reason: "Razorpay payment link verified paid via live API sync",
+          actor: "system:razorpay_sync",
+        });
+        await auditService.record({
+          caseId: id,
+          action: "outcome_received",
+          summary: `[RAZORPAY] Payment confirmed captured via Razorpay API.`,
+          detail: {
+            lifecycleEvent: "RAZORPAY_PAYMENT_RECEIVED",
+            paymentLinkId,
+            status: "paid",
+          },
+          actor: "system:razorpay_sync",
+        });
+        eventBroadcaster.broadcast("case.updated", updated);
+        return ok(res, {
+          synced: true,
+          status: "recovered",
+          message: "Payment successfully verified and captured in Razorpay!",
+          case: updated,
+        });
+      }
+
+      // Check for failed payment attempts
+      const failedPayment = allPayments.find(
+        (p: any) => p.status === "failed" || p.status === "declined",
+      );
+
+      if (
+        failedPayment &&
+        (caseRow.currentState === "customer_action_required" ||
+          caseRow.currentState === "recovering")
+      ) {
+        const payId = failedPayment.payment_id || failedPayment.id;
+        let errorDesc = "Customer payment declined by bank.";
+        let errorCode = "PAYMENT_FAILED";
+
+        if (payId) {
+          try {
+            const fullPayment = await razorpayClient.fetchPayment(payId);
+            errorDesc =
+              fullPayment.error_description ||
+              fullPayment.error_reason ||
+              failedPayment.error_description ||
+              errorDesc;
+            errorCode = fullPayment.error_code || errorCode;
+          } catch {}
+        }
+
+        const newAttempts = Number(caseRow.attemptCount || 0) + 1;
+
+        await auditService.record({
+          caseId: id,
+          action: "action_failed",
+          summary: `[RAZORPAY] Payment link attempt #${newAttempts} failed: ${errorDesc}`,
+          detail: {
+            lifecycleEvent: "PAYMENT_FAILED",
+            provider: "razorpay",
+            paymentId: payId,
+            paymentLinkId,
+            errorCode,
+            errorDescription: errorDesc,
+            attemptCount: newAttempts,
+          },
+          actor: "system:razorpay_sync",
+        });
+
+        const nextState = newAttempts >= 3 ? "escalated" : "waiting";
+        const updated = await caseLifecycle.transition({
+          caseId: id,
+          toState: nextState,
+          reason: `Razorpay payment attempt failed (${errorDesc}). ${
+            nextState === "escalated"
+              ? "Max retries reached; escalated to human supervisor."
+              : "Queued for automated retry sequence."
+          }`,
+          actor: "system:razorpay_sync",
+        });
+
+        eventBroadcaster.broadcast("case.updated", updated);
+        return ok(res, {
+          synced: true,
+          status: nextState,
+          message: `Payment failure verified with Razorpay (${errorDesc}). Case moved to ${nextState}.`,
+          case: updated,
+        });
+      }
+
+      if (link.status === "cancelled" || link.status === "expired") {
+        const updated = await caseLifecycle.transition({
+          caseId: id,
+          toState: "waiting",
+          reason: `Razorpay payment link ${link.status}. Alternative recovery action touchpoint queued.`,
+          actor: "system:razorpay_sync",
+        });
+        eventBroadcaster.broadcast("case.updated", updated);
+        return ok(res, {
+          synced: true,
+          status: "waiting",
+          message: `Razorpay link ${link.status}. Case moved to waiting for next recovery action.`,
+          case: updated,
+        });
+      }
+
+      return ok(res, {
+        synced: true,
+        status: caseRow.currentState,
+        message: "Payment link is active; awaiting customer payment in Razorpay.",
+        case: caseRow,
+      });
+    } catch (err: any) {
+      return ok(res, {
+        synced: false,
+        status: caseRow.currentState,
+        message: `Razorpay API check: ${err.message}`,
+        case: caseRow,
+      });
+    }
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/simulate-payment-failure",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const caseRow = await caseLifecycle.findById(id);
+    const reason =
+      req.body?.reason ||
+      "Payment declined: Bank downtime / insufficient funds / card authentication failed";
+    const newAttempts = Number(caseRow.attemptCount || 0) + 1;
+
+    await auditService.record({
+      caseId: id,
+      action: "action_failed",
+      summary: `[RAZORPAY SIMULATION] Customer payment link attempt #${newAttempts} failed: ${reason}`,
+      detail: {
+        lifecycleEvent: "PAYMENT_FAILED",
+        provider: "razorpay",
+        failureReason: reason,
+        attemptCount: newAttempts,
+        simulated: true,
+      },
+      actor: "operator:simulation",
+    });
+
+    const nextState = newAttempts >= 3 ? "escalated" : "waiting";
+    const updated = await caseLifecycle.transition({
+      caseId: id,
+      toState: nextState,
+      reason: `Customer payment attempt #${newAttempts} failed: ${reason}. ${
+        nextState === "escalated"
+          ? "Max retries reached; escalated to human supervisor."
+          : "Automated retry sequence scheduled."
+      }`,
+      actor: "operator:simulation",
+    });
+
+    eventBroadcaster.broadcast("case.updated", updated);
+    ok(res, {
+      simulated: true,
+      status: nextState,
+      message: `Simulated payment failure recorded. Case transitioned to ${nextState}.`,
+      case: updated,
+    });
+  }),
+);
+
+casesRouter.post(
+  "/cases/:id/simulate-payment-success",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const caseRow = await caseLifecycle.findById(id);
+    const amountMinor = Number(caseRow.amountAtRiskMinor || 0);
+
+    const updated = await caseLifecycle.recordOutcome({
+      caseId: id,
+      recoveredMinor: amountMinor,
+      reason: "[RAZORPAY SIMULATION] Customer paid invoice via Razorpay payment link.",
+      actor: "operator:simulation",
+    });
+
+    await auditService.record({
+      caseId: id,
+      action: "outcome_received",
+      summary: `[RAZORPAY SIMULATION] Razorpay payment link paid. Recovered ₹${Math.round(
+        amountMinor / 100,
+      ).toLocaleString("en-IN")}.`,
+      detail: {
+        lifecycleEvent: "RAZORPAY_PAYMENT_RECEIVED",
+        amountMinor,
+        simulated: true,
+      },
+      actor: "operator:simulation",
+    });
+
+    eventBroadcaster.broadcast("case.updated", updated);
+    ok(res, {
+      simulated: true,
+      status: "recovered",
+      message: "Simulated payment captured! Case successfully recovered.",
+      case: updated,
+    });
+  }),
+);
+
 
 

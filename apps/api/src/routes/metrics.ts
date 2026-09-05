@@ -143,6 +143,7 @@ metricsRouter.post(
         ...result.batch,
         metrics: result.metrics,
         activity: result.activity,
+        caseResults: result.caseResults,
       });
       return;
     }

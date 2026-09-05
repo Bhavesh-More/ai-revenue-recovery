@@ -9,19 +9,7 @@ import {
 } from "@recovery/validation";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { created, ok, collection } from "../lib/responses.js";
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
-
-// convert objects with any bigint to a number/string. Required because res.json cannot serialize bigint, and policy rows carry bigint money fields.
-function jsonSafe<T>(value: T): JsonValue {
-  return JSON.parse(
-    JSON.stringify(value, (_k, v) =>
-      typeof v === "bigint" ? v.toString() : v,
-    ),
-  ) as JsonValue;
-}
+import { created, ok, collection, jsonSafe } from "../lib/responses.js";
 
 function parse<T>(schema: { safeParse(v: unknown): { success: true; data: T } | { success: false; error: any } }, value: unknown): T {
   const parsed = schema.safeParse(value);

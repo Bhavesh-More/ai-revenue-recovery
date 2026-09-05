@@ -7,7 +7,7 @@ test.describe('AI Revenue Recovery Platform - Final Demo Readiness E2E Suite', (
 
     // Verify header components
     await expect(page.locator('header')).toBeVisible();
-    await expect(page.getByText('Seed Scenarios')).toBeVisible();
+    await expect(page.getByText('LIVE DEMO')).toBeVisible();
     await expect(page.getByText('Run Batch')).toBeVisible();
   });
 

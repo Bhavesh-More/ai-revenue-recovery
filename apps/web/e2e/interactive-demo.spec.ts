@@ -1,17 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('AI Revenue Recovery Platform - Interactive Demo Actions E2E', () => {
-  test('1. Seed Scenarios from Header and verify interactive toast', async ({ page }) => {
+  test('1. Open Live Demo Modal from Header and verify modal controls', async ({ page }) => {
     await page.goto('/');
     
-    // Check if Seed Scenarios button exists and click it
-    const seedButton = page.getByRole('button', { name: /Seed Scenarios/i });
-    await expect(seedButton).toBeVisible();
-    await seedButton.click();
+    // Check if LIVE DEMO button exists and click it
+    const liveDemoBtn = page.getByRole('button', { name: /LIVE DEMO/i });
+    await expect(liveDemoBtn).toBeVisible();
+    await liveDemoBtn.click();
 
-    // Confirm that seeding action triggers and completes
-    await page.waitForTimeout(1000);
-    await expect(page.locator('body')).toBeVisible();
+    // Confirm modal opens
+    await expect(page.getByText('LIVE DEMO MODE')).toBeVisible();
   });
 
   test('2. Navigate to Batches page and trigger batch actions', async ({ page }) => {

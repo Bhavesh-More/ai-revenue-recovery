@@ -39,7 +39,6 @@ ai-revenue-recovery/
 │   ├── policy/       # Policy Engine, Guardrails & Execution Limits
 │   ├── queue/        # BullMQ Redis Queue Setup
 │   ├── types/        # TypeScript Shared Types & Enums
-│   ├── ui/           # Shared UI Component Library
 │   └── validation/   # Zod Schemas & Validators
 ├── docker-compose.yml# Multi-stage Docker Compose orchestrator
 └── package.json

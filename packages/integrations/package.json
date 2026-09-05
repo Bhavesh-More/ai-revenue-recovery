@@ -13,9 +13,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@recovery/config": "workspace:*",
-    "@recovery/types": "workspace:*",
-    "zod": "^3.23.8"
+    "@recovery/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

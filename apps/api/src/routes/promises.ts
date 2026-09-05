@@ -14,18 +14,7 @@ import {
 import { policyService } from "@recovery/policy";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { accepted, collection, ok } from "../lib/responses.js";
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
-
-function jsonSafe<T>(value: T): JsonValue {
-  return JSON.parse(
-    JSON.stringify(value, (_k, v) =>
-      typeof v === "bigint" ? v.toString() : v,
-    ),
-  ) as JsonValue;
-}
+import { accepted, collection, jsonSafe, ok } from "../lib/responses.js";
 
 function parse<T>(
   schema: {

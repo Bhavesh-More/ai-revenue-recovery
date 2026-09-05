@@ -74,9 +74,16 @@ export function ActiveBatchPanel({
             <span className="text-[11px] font-bold text-[#4A4A4A] dark:text-[#9CA3AF] uppercase tracking-wider">
               Completion Progress
             </span>
-            <span className="font-mono font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
-              {batch.metrics.progress.toFixed(1)}%
-            </span>
+            <div className="flex items-center gap-2">
+              {isProcessing && (
+                <span className="text-[10px] text-[#3B82F6] font-semibold animate-pulse font-mono">
+                  Processing ({batch.metrics.processedCases}/{batch.metrics.totalCases})...
+                </span>
+              )}
+              <span className="font-mono font-bold text-[#1A1A1A] dark:text-[#F9FAFB]">
+                {batch.metrics.progress.toFixed(1)}%
+              </span>
+            </div>
           </div>
           <div
             role="progressbar"
@@ -86,7 +93,7 @@ export function ActiveBatchPanel({
             className="w-full bg-[#F0F2F5] dark:bg-[#131416] rounded-full h-2.5 border border-[#E5E7EB] dark:border-[#2A2B2D] overflow-hidden"
           >
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
+              className={`h-full rounded-full transition-all duration-150 ease-out ${
                 isCompleted ? 'bg-[#00B074]' : 'bg-[#3B82F6]'
               }`}
               style={{ width: `${Math.min(100, Math.max(0, batch.metrics.progress))}%` }}

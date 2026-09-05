@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { RecoveryCaseDetail } from '../../mocks/recoveryCaseDetails';
 import { formatIndianCurrency, StatusBadge } from './RecoveryCasesTable';
-import { advanceSimulationCase, approveSimulationCase } from '../../lib/api';
+import {
+  advanceSimulationCase,
+  approveSimulationCase,
+  syncCaseRazorpay,
+} from '../../lib/api';
 
 export interface CaseHeaderCardProps {
   caseDetail: RecoveryCaseDetail;
@@ -13,6 +17,28 @@ export interface CaseHeaderCardProps {
 
 export function CaseHeaderCard({ caseDetail, onRefresh }: CaseHeaderCardProps) {
   const [advancing, setAdvancing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
+
+  const handleSyncRazorpay = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res = await syncCaseRazorpay(caseDetail.id);
+      setSyncMsg({ type: 'info', text: res.message });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('recovery:data-updated'));
+      }
+      onRefresh?.();
+      setTimeout(() => setSyncMsg(null), 6000);
+    } catch (err: any) {
+      setSyncMsg({ type: 'error', text: err.message || 'Failed to sync with Razorpay' });
+      setTimeout(() => setSyncMsg(null), 6000);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleAdvance = async () => {
     if (advancing) return;
@@ -92,25 +118,26 @@ export function CaseHeaderCard({ caseDetail, onRefresh }: CaseHeaderCardProps) {
               </button>
             )}
 
-            {caseDetail.status === 'Cust Action' && (caseDetail as any).batchId && (
-              <button
-                type="button"
-                onClick={handleAdvance}
-                disabled={advancing}
-                className="px-4 py-2 bg-[#3B82F6] text-white rounded-lg text-sm font-bold hover:bg-[#2563EB] transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
-              >
-                <Icon
-                  icon={advancing ? 'lucide:loader-2' : 'lucide:send'}
-                  className={`text-base ${advancing ? 'animate-spin' : ''}`}
-                />
-                <span>{advancing ? 'Simulating...' : 'Simulate Customer Payment'}</span>
-              </button>
-            )}
+            {caseDetail.status === 'Cust Action' && (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Awaiting Razorpay Payment</span>
+                </div>
 
-            {caseDetail.status === 'Cust Action' && !(caseDetail as any).batchId && (
-              <div className="px-4 py-2 bg-[#F0F9FF] dark:bg-[#0C2D48] border border-[#BAE6FD] dark:border-[#1E3A5F] rounded-lg text-sm font-bold text-[#0369A1] dark:text-[#7DD3FC] flex items-center gap-2">
-                <Icon icon="lucide:clock" className="text-base" />
-                <span>Awaiting Razorpay TEST Payment</span>
+                <button
+                  type="button"
+                  onClick={handleSyncRazorpay}
+                  disabled={syncing || advancing}
+                  className="px-3.5 py-2 bg-white dark:bg-[#1A1B1E] border border-[#3B82F6]/50 dark:border-[#3B82F6]/50 text-[#2563EB] dark:text-[#60A5FA] rounded-lg text-xs font-bold hover:bg-[#3B82F6]/10 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Query Razorpay API directly to verify test payment status"
+                >
+                  <Icon
+                    icon={syncing ? 'lucide:loader-2' : 'lucide:refresh-cw'}
+                    className={`text-sm ${syncing ? 'animate-spin' : ''}`}
+                  />
+                  <span>{syncing ? 'Checking Razorpay...' : 'Sync Razorpay Status'}</span>
+                </button>
               </div>
             )}
 
@@ -138,6 +165,22 @@ export function CaseHeaderCard({ caseDetail, onRefresh }: CaseHeaderCardProps) {
             </button>
           </div>
         </div>
+
+        {syncMsg && (
+          <div
+            className={`px-6 py-2.5 text-xs font-bold flex items-center gap-2 border-b ${
+              syncMsg.type === 'error'
+                ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+            }`}
+          >
+            <Icon
+              icon={syncMsg.type === 'error' ? 'lucide:alert-circle' : 'lucide:info'}
+              className="text-sm shrink-0"
+            />
+            <span>{syncMsg.text}</span>
+          </div>
+        )}
 
         {/* 4 Summary Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] dark:divide-[#2A2B2D]">

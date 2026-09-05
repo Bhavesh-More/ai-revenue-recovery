@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RunBatchPanel } from './RunBatchPanel';
 import { ActiveBatchPanel } from './ActiveBatchPanel';
 import { BatchActivityTimeline } from './BatchActivityTimeline';
@@ -131,23 +131,29 @@ export function BatchProcessingPage() {
     loadLatestBatch();
   }, []);
 
+  const isPausedRef = useRef(false);
+  const isCancelledRef = useRef(false);
+
   // Toggle Pause / Resume for Active Batch
   const handleTogglePause = () => {
     if (!activeBatch || activeBatch.status === 'completed') return;
 
-    setActiveBatch((prev) =>
-      prev
-        ? {
-            ...prev,
-            status: prev.status === 'processing' ? 'paused' : 'processing',
-          }
-        : null,
-    );
+    setActiveBatch((prev) => {
+      if (!prev) return null;
+      const nextStatus = prev.status === 'processing' ? 'paused' : 'processing';
+      isPausedRef.current = nextStatus === 'paused';
+      return {
+        ...prev,
+        status: nextStatus,
+      };
+    });
   };
 
   // Generate & Run new real batch on backend in Simulation Mode
   const handleGenerateBatch = async (config: SyntheticBatchConfig) => {
     setIsGenerating(true);
+    isPausedRef.current = false;
+    isCancelledRef.current = false;
 
     try {
       const allDirections = [
@@ -196,13 +202,13 @@ export function BatchProcessingPage() {
       const caseResults = created.caseResults || [];
       const totalCount = Number(metrics.totalCases || config.numberOfCases || 100);
 
-
       // Adaptive delay per case:
       // e.g. 10 cases: 350ms each (~3.5s total)
       // e.g. 25 cases: 140ms each (~3.5s total)
       // e.g. 50 cases: 70ms each (~3.5s total)
       // e.g. 100 cases: 35ms each (~3.5s total)
-      const stepDelay = Math.max(25, Math.min(380, Math.round(3500 / Math.max(1, totalCount))));
+      // e.g. 500 cases: 10ms each (~5.0s total)
+      const stepDelay = Math.max(10, Math.min(400, Math.round(3500 / Math.max(1, totalCount))));
 
       let curRecovered = 0;
       let curWaiting = 0;
@@ -218,7 +224,8 @@ export function BatchProcessingPage() {
         customerAction: 0,
         humanEscalation: 0,
       };
-      let curActivity = [...activityLogs];
+      // Start with empty activity stream for this new batch run
+      let curActivity: BatchActivityEvent[] = [];
 
       // Set initial status to 'processing' with 0% progress
       setActiveBatch({
@@ -243,13 +250,20 @@ export function BatchProcessingPage() {
           recoveryRate: 0,
           byIntervention: curIntervention,
         },
-        activity: curActivity,
+        activity: [],
       });
 
       if (caseResults.length > 0) {
         // Stream each case sequentially with adaptive delay
         for (let i = 0; i < caseResults.length; i++) {
+          if (isCancelledRef.current) break;
+          while (isPausedRef.current) {
+            await new Promise((r) => setTimeout(r, 150));
+          }
+
           await new Promise((r) => setTimeout(r, stepDelay));
+          if (isCancelledRef.current) break;
+
           const c = caseResults[i];
 
           curRiskRs += c.amountRs;
@@ -276,7 +290,8 @@ export function BatchProcessingPage() {
           }
 
           if (c.activityEvent) {
-            curActivity = [c.activityEvent, ...curActivity.slice(0, 19)];
+            // Prepend so the newest event is immediately visible at the top of Live Processing Activity
+            curActivity = [c.activityEvent, ...curActivity.slice(0, 49)];
           }
 
           const currentProcessed = i + 1;
@@ -306,7 +321,7 @@ export function BatchProcessingPage() {
               recoveryRate: currentRate,
               byIntervention: { ...curIntervention },
             },
-            activity: curActivity,
+            activity: [...curActivity],
           });
         }
       } else {

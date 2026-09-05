@@ -7,13 +7,23 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-function jsonSafe<T>(value: T): any {
+export type JsonPrimitive = string | number | boolean | null | undefined;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
+export function jsonSafe<T>(value: T): any {
   if (value === undefined || value === null) return value;
   return JSON.parse(
     JSON.stringify(value, (_k, v) =>
       typeof v === "bigint" ? Number(v) : v,
     ),
   );
+}
+
+export function payloadRecord(value: unknown): Record<string, unknown> {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
 }
 
 export function ok<T>(res: Response, data: T): Response {

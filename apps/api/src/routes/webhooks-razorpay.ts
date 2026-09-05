@@ -48,25 +48,78 @@ webhooksRazorpayRouter.post(
 
     let caseIdHandled: string | undefined;
 
-    // 1. Payment Failure Event -> Create/Ingest Payment Degradation Case
+    // 1. Payment Failure Event -> Check for Existing Recovery Case or Ingest New Event
     if (eventType === "payment.failed" && paymentEntity) {
-      const customerId = paymentEntity.contact || paymentEntity.email || "00000000-0000-0000-0000-000000000000";
-      const ingestResult = await eventIngestion.ingest({
-        source: "razorpay",
-        customerId,
-        externalId: paymentEntity.id,
-        payload: {
-          type: "payment.failed",
-          customerId,
-          paymentId: paymentEntity.id,
-          amountAtRiskMinor: paymentEntity.amount,
-          currency: paymentEntity.currency || "INR",
-          attemptCount: 1,
-        },
-      });
+      const refCaseId =
+        (paymentEntity.notes as any)?.caseId ||
+        (linkEntity?.notes as any)?.caseId ||
+        linkEntity?.reference_id ||
+        paymentEntity.description?.match(/Case ([a-f0-9-]+)/i)?.[1];
 
-      if (ingestResult.case) {
-        caseIdHandled = ingestResult.case.id;
+      if (refCaseId) {
+        try {
+          const caseRow = await caseLifecycle.findByIdOrNull(refCaseId);
+          if (caseRow && caseRow.currentState !== "recovered" && caseRow.currentState !== "stopped") {
+            const newAttempts = Number(caseRow.attemptCount || 0) + 1;
+            const errorDesc =
+              paymentEntity.error_description ||
+              paymentEntity.error_reason ||
+              "Customer payment declined by bank.";
+
+            await auditService.record({
+              caseId: refCaseId,
+              action: "action_failed",
+              summary: `[RAZORPAY] Payment link attempt #${newAttempts} failed: ${errorDesc}`,
+              detail: {
+                lifecycleEvent: "PAYMENT_FAILED",
+                provider: "razorpay",
+                paymentId: paymentEntity.id,
+                errorCode: paymentEntity.error_code,
+                errorDescription: errorDesc,
+                attemptCount: newAttempts,
+              },
+              actor: "system:razorpay_webhook",
+            });
+
+            // Transition to escalated if max attempts reached, otherwise waiting for retry
+            const nextState = newAttempts >= 3 ? "escalated" : "waiting";
+            const updated = await caseLifecycle.transition({
+              caseId: refCaseId,
+              toState: nextState,
+              reason: `Razorpay payment link attempt #${newAttempts} failed (${errorDesc}). ${
+                nextState === "escalated"
+                  ? "Maximum retry threshold reached; escalated to human supervisor."
+                  : "Scheduled automated retry sequence."
+              }`,
+              actor: "razorpay:webhook",
+            });
+
+            caseIdHandled = updated.id;
+          }
+        } catch (err) {
+          console.error("[Webhook:PaymentFailed] Error handling existing case:", err);
+        }
+      }
+
+      if (!caseIdHandled) {
+        const customerId = paymentEntity.contact || paymentEntity.email || "00000000-0000-0000-0000-000000000000";
+        const ingestResult = await eventIngestion.ingest({
+          source: "razorpay",
+          customerId,
+          externalId: paymentEntity.id,
+          payload: {
+            type: "payment.failed",
+            customerId,
+            paymentId: paymentEntity.id,
+            amountAtRiskMinor: paymentEntity.amount,
+            currency: paymentEntity.currency || "INR",
+            attemptCount: 1,
+          },
+        });
+
+        if (ingestResult.case) {
+          caseIdHandled = ingestResult.case.id;
+        }
       }
     }
 

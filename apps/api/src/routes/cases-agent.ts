@@ -14,19 +14,7 @@ import {
 } from "@recovery/validation";
 import { ApiError } from "../lib/errors.js";
 import { asyncHandler } from "../lib/async-handler.js";
-import { accepted, ok, collection } from "../lib/responses.js";
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
-
-// convert objects with any bigint to a number/string. agent_decisions stores bigint money fields.
-function jsonSafe<T>(value: T): JsonValue {
-  return JSON.parse(
-    JSON.stringify(value, (_k, v) =>
-      typeof v === "bigint" ? v.toString() : v,
-    ),
-  ) as JsonValue;
-}
+import { accepted, ok, collection, jsonSafe } from "../lib/responses.js";
 
 function parse<T>(
   schema: { safeParse(v: unknown): { success: true; data: T } | { success: false; error: any } },
